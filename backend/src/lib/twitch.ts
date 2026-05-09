@@ -20,19 +20,26 @@ export function buildAuthUrl(state: string): string {
 }
 
 export async function exchangeCode(code: string): Promise<string> {
-  const res = await fetch(TWITCH_TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: TWITCH_CLIENT_ID,
-      client_secret: TWITCH_CLIENT_SECRET,
-      code,
-      grant_type: "authorization_code",
-      redirect_uri: TWITCH_REDIRECT_URI,
-    }),
+  const params = new URLSearchParams({
+    client_id: TWITCH_CLIENT_ID,
+    client_secret: TWITCH_CLIENT_SECRET,
+    code,
+    grant_type: "authorization_code",
+    redirect_uri: TWITCH_REDIRECT_URI,
   });
-  if (!res.ok) throw new Error("Failed to exchange Twitch code");
-  const data = (await res.json()) as { access_token: string };
+
+  const res = await fetch(`${TWITCH_TOKEN_URL}?${params.toString()}`, {
+    method: "POST",
+  });
+
+  const data = await res.json();
+
+  console.log("TWITCH TOKEN RESPONSE:", data);
+
+  if (!res.ok) {
+    throw new Error(JSON.stringify(data));
+  }
+
   return data.access_token;
 }
 
