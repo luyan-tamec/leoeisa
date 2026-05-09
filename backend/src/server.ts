@@ -46,7 +46,7 @@ app.use(
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "https://cinevote.onrender.com/",
+    origin: process.env.FRONTEND_URL || "https://cinevote.onrender.com",
     credentials: true,
   })
 );
@@ -73,7 +73,7 @@ app.use(
       secure: !isDev,
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: isDev ? "lax" : "strict",
+      sameSite: "lax",
     },
     name: "cv.sid",
   })
