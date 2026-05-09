@@ -169,32 +169,39 @@ function applyUrl() {
 
 /* ══ EVENT DELEGATION — captura cliques em todos os botões do admin ══ */
 document.addEventListener("click", (e) => {
+  // Sobe na árvore DOM até encontrar o elemento com data-attribute
   const btn = e.target.closest("[data-delta]");
   const resetBtn = e.target.closest("[data-action='reset']");
   const deleteBtn = e.target.closest("[data-action='delete']");
 
   if (btn) {
+    e.preventDefault();
+    e.stopPropagation();
     const id = btn.dataset.id;
     const title = btn.dataset.title;
     const delta = parseInt(btn.dataset.delta);
-    adjustVotes(id, title, delta);
+    if (id && !isNaN(delta)) adjustVotes(id, title, delta);
     return;
   }
 
   if (resetBtn) {
+    e.preventDefault();
+    e.stopPropagation();
     const id = resetBtn.dataset.id;
     const title = resetBtn.dataset.title;
-    resetVotes(id, title);
+    if (id) resetVotes(id, title);
     return;
   }
 
   if (deleteBtn) {
+    e.preventDefault();
+    e.stopPropagation();
     const id = deleteBtn.dataset.id;
     const title = deleteBtn.dataset.title;
-    deleteMovie(id, title);
+    if (id) deleteMovie(id, title);
     return;
   }
-});
+}, true); // useCapture=true garante que captura antes de qualquer outro listener
 const addForm = document.getElementById("addMovieForm");
 if (addForm) {
   const fImgFile = document.getElementById("fImgFile");

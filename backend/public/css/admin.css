@@ -107,7 +107,9 @@
   width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
   border-radius: 4px; color: var(--muted); font-size: .85rem; font-weight: 700; transition: all .15s;
 }
+.vote-btn * { pointer-events: none; }
 .vote-btn:hover { background: var(--border); color: var(--text); }
+.btn-icon * { pointer-events: none; }
 .btn-icon {
   background: none; border: none; cursor: pointer;
   padding: .28rem; border-radius: 6px; color: var(--muted); transition: all .15s;
