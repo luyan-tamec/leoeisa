@@ -1,0 +1,115 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<% if (error) { %>
+<div class="alert-banner">
+  <% if (error === 'auth') { %> Você precisa estar logado para votar.
+  <% } else if (error === 'twitch_denied') { %> Login cancelado.
+  <% } else if (error === 'oauth_failed') { %> Erro ao conectar com a Twitch. Tente novamente.
+  <% } else { %> Ocorreu um erro. Tente novamente.
+  <% } %>
+  <button onclick="this.parentElement.remove()" class="alert-close">✕</button>
+</div>
+<% } %>
+
+<section class="hero">
+  <h1>VOTE NO SEU<br><em>FILME FAVORITO</em></h1>
+  <p>Conecte sua conta Twitch e vote nos filmes que você quer ver em destaque.</p>
+  <div class="live-count">
+    <span class="live-dot"></span>
+    <span id="totalVotesDisplay"><%= total.toLocaleString('pt-BR') %> votos registrados</span>
+  </div>
+</section>
+
+<div class="filters">
+  <span class="filter-label">Categoria</span>
+  <%
+    const catLabels = {
+      todos: 'Todos',
+      acao: '⚔️ Ação',
+      comedia: '😂 Comédia',
+      terror: '👻 Terror',
+      drama: '🎭 Drama',
+      ficcao: '🚀 Ficção Científica',
+      animacao: '🎨 Animação'
+    };
+  %>
+  <% categories.forEach(cat => { %>
+    <a href="/?category=<%= cat %>" class="chip <%= activeCategory === cat ? 'active' : '' %>">
+      <%= catLabels[cat] || cat %>
+    </a>
+  <% }) %>
+</div>
+
+<div class="grid" id="movieGrid">
+  <% if (movies.length === 0) { %>
+    <div class="empty">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+      <p>Nenhum filme nessa categoria.</p>
+    </div>
+  <% } %>
+
+  <% movies.forEach((movie, i) => { %>
+    <%
+      const catLabel = catLabels[movie.category] || movie.category;
+    %>
+    <div class="card" style="animation-delay:<%= i * 0.05 %>s">
+      <div class="card-poster">
+        <img
+          src="<%= movie.poster || 'https://placehold.co/500x281/1c1e27/6b7080?text=Sem+Poster' %>"
+          alt="<%= movie.title %>"
+          loading="lazy"
+          onerror="this.src='https://placehold.co/500x281/1c1e27/6b7080?text=Sem+Poster'"
+        >
+        <span class="card-rank">#<%= movie.rank %></span>
+        <span class="card-badge"><%= catLabel %></span>
+      </div>
+      <div class="card-body">
+        <div class="card-title"><%= movie.title %></div>
+        <div class="card-meta"><%= movie.year %></div>
+
+        <div class="progress-wrap">
+          <div class="progress-info">
+            <span class="vote-count"><%= movie.voteCount.toLocaleString('pt-BR') %> votos</span>
+            <span class="vote-pct"><%= movie.pct %>%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill <%= movie.rankClass %>" style="width:<%= movie.barW %>%"></div>
+          </div>
+        </div>
+
+        <% if (!user) { %>
+          <a href="/auth/twitch" class="btn-vote">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            Votar
+          </a>
+        <% } else if (movie.hasVoted) { %>
+          <button class="btn-vote voted" disabled>
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Votado!
+          </button>
+        <% } else { %>
+          <button
+            class="btn-vote"
+            data-movie-id="<%= movie.id %>"
+            data-movie-title="<%= movie.title %>"
+            onclick="castVote(this)"
+          >
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            Votar
+          </button>
+        <% } %>
+      </div>
+    </div>
+  <% }) %>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-dot" id="toastDot"></span>
+  <span id="toastMsg"></span>
+</div>
+
+<script src="/js/main.js"></script>
+</body>
+</html>

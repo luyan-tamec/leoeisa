@@ -1,3 +1,4 @@
+
 /* ══ TOAST ══ */
 let toastTimer;
 function showToast(msg, type = "ok") {
@@ -167,7 +168,34 @@ function applyUrl() {
   if (fileInput) fileInput.value = "";
 }
 
-/* ══ ADD MOVIE FORM ══ */
+/* ══ EVENT DELEGATION — captura cliques em todos os botões do admin ══ */
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-delta]");
+  const resetBtn = e.target.closest("[data-action='reset']");
+  const deleteBtn = e.target.closest("[data-action='delete']");
+
+  if (btn) {
+    const id = btn.dataset.id;
+    const title = btn.dataset.title;
+    const delta = parseInt(btn.dataset.delta);
+    adjustVotes(id, title, delta);
+    return;
+  }
+
+  if (resetBtn) {
+    const id = resetBtn.dataset.id;
+    const title = resetBtn.dataset.title;
+    resetVotes(id, title);
+    return;
+  }
+
+  if (deleteBtn) {
+    const id = deleteBtn.dataset.id;
+    const title = deleteBtn.dataset.title;
+    deleteMovie(id, title);
+    return;
+  }
+});
 const addForm = document.getElementById("addMovieForm");
 if (addForm) {
   const fImgFile = document.getElementById("fImgFile");
