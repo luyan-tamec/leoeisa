@@ -96,6 +96,31 @@ app.use(
 // ── Health check (Render uses this) ──
 app.get("/health", (_req, res) => res.json({ status: "ok", ts: Date.now() }));
 
+// ── Setup route — torna o usuário logado admin (protegido por SETUP_SECRET) ──
+// Uso: /setup?secret=SUA_SETUP_SECRET
+// Depois de usar, remova a variável SETUP_SECRET do Render para desativar.
+app.get("/setup", async (req, res) => {
+  const secret = process.env.SETUP_SECRET;
+  if (!secret || req.query.secret !== secret) {
+    return res.status(403).send("Proibido.");
+  }
+  if (!req.session.userId) {
+    return res.send(`
+      <p>Você não está logado. <a href="/auth/twitch">Entre com a Twitch primeiro</a> e depois volte para <b>/setup?secret=${req.query.secret}</b></p>
+    `);
+  }
+  const { PrismaClient } = await import("@prisma/client");
+  const p = new PrismaClient();
+  const user = await p.user.update({
+    where: { id: req.session.userId },
+    data: { isAdmin: true },
+  });
+  req.session.isAdmin = true;
+  await p.$disconnect();
+  res.send(`✅ Pronto! <b>${user.displayName}</b> agora é admin. <a href="/admin">Ir para o painel</a>`);
+});
+
+
 // ── Routes ──
 app.use("/auth", authRouter);
 app.use("/api/movies", moviesRouter);
