@@ -46,7 +46,7 @@ app.use(
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: process.env.FRONTEND_URL || "https://cinevote.onrender.com/",
     credentials: true,
   })
 );
@@ -58,7 +58,7 @@ app.use(cookieParser());
 
 // ── Session (PostgreSQL store) ──
 const PgSession = ConnectPgSimple(session);
-
+app.set('trust proxy', 1);
 app.use(
   session({
     store: new PgSession({
