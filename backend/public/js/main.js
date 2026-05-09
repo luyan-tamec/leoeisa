@@ -20,10 +20,7 @@ async function castVote(btn) {
   try {
     const res = await fetch(`/api/movies/${movieId}/vote`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
     });
 
