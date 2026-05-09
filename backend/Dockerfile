@@ -1,51 +1,45 @@
-FROM node:20-alpine AS builder
+# ───────────────── Builder ─────────────────
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
-RUN apk add --no-cache openssl
-
 COPY package*.json ./
-
 COPY prisma ./prisma
 
 RUN npm ci
 
-RUN npx prisma generate
+COPY . .
 
 RUN npx prisma generate
-
-COPY tsconfig.json ./
-COPY src ./src
-
 RUN npm run build
 
 
-# ── Production image ──
-FROM node:20-alpine AS runner
+# ───────────────── Runner ─────────────────
+FROM node:20-slim
 
 WORKDIR /app
-
-RUN apk add --no-cache openssl
 
 ENV NODE_ENV=production
 
 COPY package*.json ./
+COPY prisma ./prisma
 
-RUN npm ci --omit=dev && npm cache clean --force
+# impede postinstall automático
+RUN npm ci --omit=dev --ignore-scripts
+
+# gera prisma manualmente
+RUN npx prisma generate
 
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-
-COPY prisma ./prisma
-COPY views ./views
-COPY public ./public
+COPY --from=builder /app/views ./views
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/node_modules ./node_modules
 
 RUN mkdir -p public/uploads
 
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
+  CMD node -e "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
