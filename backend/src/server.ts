@@ -46,7 +46,7 @@ app.use(
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "https://cinevote.onrender.com",
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
   })
 );
@@ -56,16 +56,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// ── Trust proxy (necessário no Render/Heroku) ──
+app.set("trust proxy", 1);
+
 // ── Session (PostgreSQL store) ──
 const PgSession = ConnectPgSimple(session);
 
-app.set('trust proxy', 1);
 app.use(
   session({
     store: new PgSession({
       conString: process.env.DATABASE_URL,
       tableName: "session",
-      createTableIfMissing: true, // safe: only creates if not exists
+      createTableIfMissing: true,
     }),
     secret: process.env.SESSION_SECRET || "change-me-in-production",
     resave: false,
@@ -74,7 +76,7 @@ app.use(
       secure: !isDev,
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: "lax",
+      sameSite: "lax", // lax em vez de strict — compatível com fetch e mobile
     },
     name: "cv.sid",
   })
@@ -119,7 +121,6 @@ app.get("/setup", async (req, res) => {
   await p.$disconnect();
   res.send(`✅ Pronto! <b>${user.displayName}</b> agora é admin. <a href="/admin">Ir para o painel</a>`);
 });
-
 
 // ── Routes ──
 app.use("/auth", authRouter);
