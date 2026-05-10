@@ -68,7 +68,7 @@
 
     <div class="section-title">Ações Rápidas</div>
     <div class="action-row">
-      <button class="btn-danger" onclick="adminAction('reset-all','Zerar TODOS os votos?','POST','/api/admin/reset-all-votes')">
+      <button class="btn-danger" data-action="reset-all">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         Zerar Todos os Votos
       </button>
@@ -239,7 +239,7 @@
 
     <div class="section-title">Zona de Perigo</div>
     <div class="action-row">
-      <button class="btn-danger" onclick="adminAction('reset-all','Zerar TODOS os votos de todos os filmes?','POST','/api/admin/reset-all-votes')">
+      <button class="btn-danger" data-action="reset-all">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         Zerar TODOS os votos
       </button>
