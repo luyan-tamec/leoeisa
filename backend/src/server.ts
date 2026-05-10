@@ -49,7 +49,7 @@ app.use(
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: process.env.FRONTEND_URL || "http://cinevote.onrender.com",
     credentials: true,
   })
 );
@@ -141,8 +141,8 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 });
 
 app.listen(PORT, () => {
-  console.log(`\n🎬  CineVote running on http://localhost:${PORT}`);
-  console.log(`   ENV: ${process.env.NODE_ENV || "development"}\n`);
+  console.log(`\n🎬  CineVote running on http://cinevote.onrender:${PORT}`);
+  console.log(`   ENV: ${process.env.NODE_ENV || "production"}\n`);
 });
 
 export default app;
