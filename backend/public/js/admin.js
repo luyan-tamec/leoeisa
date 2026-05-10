@@ -169,14 +169,16 @@ function applyUrl() {
 
 /* ══ EVENT DELEGATION — captura cliques em todos os botões do admin ══ */
 document.addEventListener("click", (e) => {
-  // Sobe na árvore DOM até encontrar o elemento com data-attribute
-  const btn = e.target.closest("[data-delta]");
-  const resetBtn = e.target.closest("[data-action='reset']");
-  const deleteBtn = e.target.closest("[data-action='delete']");
+  const target = e.target;
+
+  // Ignora cliques em links <a> para não interceptar navegação
+  if (target.closest("a[href]")) return;
+
+  const btn = target.closest("[data-delta]");
+  const resetBtn = target.closest("[data-action='reset']");
+  const deleteBtn = target.closest("[data-action='delete']");
 
   if (btn) {
-    e.preventDefault();
-    e.stopPropagation();
     const id = btn.dataset.id;
     const title = btn.dataset.title;
     const delta = parseInt(btn.dataset.delta);
@@ -185,8 +187,6 @@ document.addEventListener("click", (e) => {
   }
 
   if (resetBtn) {
-    e.preventDefault();
-    e.stopPropagation();
     const id = resetBtn.dataset.id;
     const title = resetBtn.dataset.title;
     if (id) resetVotes(id, title);
@@ -194,14 +194,12 @@ document.addEventListener("click", (e) => {
   }
 
   if (deleteBtn) {
-    e.preventDefault();
-    e.stopPropagation();
     const id = deleteBtn.dataset.id;
     const title = deleteBtn.dataset.title;
     if (id) deleteMovie(id, title);
     return;
   }
-}, true); // useCapture=true garante que captura antes de qualquer outro listener
+});
 const addForm = document.getElementById("addMovieForm");
 if (addForm) {
   const fImgFile = document.getElementById("fImgFile");

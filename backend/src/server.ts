@@ -21,6 +21,9 @@ const app = express();
 const PORT = parseInt(process.env.PORT || "3000", 10);
 const isDev = process.env.NODE_ENV !== "production";
 
+// ── Trust proxy — DEVE ser antes de tudo (necessário no Render) ──
+app.set("trust proxy", 1);
+
 // ── View engine ──
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "..", "views"));
@@ -55,9 +58,6 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
-// ── Trust proxy (necessário no Render/Heroku) ──
-app.set("trust proxy", 1);
 
 // ── Session (PostgreSQL store) ──
 const PgSession = ConnectPgSimple(session);
