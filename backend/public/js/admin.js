@@ -171,9 +171,6 @@ function applyUrl() {
 document.addEventListener("click", (e) => {
   const target = e.target;
 
-  // Ignora cliques em links <a> para não interceptar navegação
-  if (target.closest("a[href]")) return;
-
   const btn = target.closest("[data-delta]");
   const resetBtn = target.closest("[data-action='reset']");
   const deleteBtn = target.closest("[data-action='delete']");
