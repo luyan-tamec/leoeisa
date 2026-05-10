@@ -1,119 +1,72 @@
-<%- include('partials/head') %>
-<%- include('partials/header') %>
+<%- include('../partials/head') %>
+<link rel="stylesheet" href="/css/admin.css">
+<%- include('../partials/header') %>
 
-<% if (error) { %>
-<div class="alert-banner">
-  <% if (error === 'auth') { %> Você precisa estar logado para votar.
-  <% } else if (error === 'twitch_denied') { %> Login cancelado.
-  <% } else if (error === 'oauth_failed') { %> Erro ao conectar com a Twitch. Tente novamente.
-  <% } else { %> Ocorreu um erro. Tente novamente.
-  <% } %>
-  <button onclick="this.parentElement.remove()" class="alert-close">✕</button>
-</div>
-<% } %>
-
-<section class="hero">
-  <h1>VOTE NO SEU<br><em>FILME FAVORITO</em></h1>
-  <p>Conecte sua conta Twitch e vote nos filmes que você quer ver em destaque.</p>
-  <div class="live-count">
-    <span class="live-dot"></span>
-    <span id="totalVotesDisplay"><%= total.toLocaleString('pt-BR') %> votos registrados</span>
+<div class="admin-wrapper">
+  <div class="admin-sidebar">
+    <nav class="admin-nav">
+      <a href="/admin?tab=overview" class="admin-nav-item <%= activeTab === 'overview' ? 'active' : '' %>">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Visão Geral
+      </a>
+      <a href="/admin?tab=movies" class="admin-nav-item <%= activeTab === 'movies' ? 'active' : '' %>">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4"/></svg>
+        Filmes
+      </a>
+      <a href="/admin?tab=add" class="admin-nav-item <%= activeTab === 'add' ? 'active' : '' %>">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Adicionar Filme
+      </a>
+      <a href="/admin/users" class="admin-nav-item">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        Usuários
+      </a>
+      <a href="/admin?tab=settings" class="admin-nav-item <%= activeTab === 'settings' ? 'active' : '' %>">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Configurações
+      </a>
+      <a href="/" class="admin-nav-item admin-nav-back">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        Voltar ao Site
+      </a>
+    </nav>
   </div>
-</section>
 
-<div class="filters">
-  <span class="filter-label">Categoria</span>
-  <%
-    const catLabels = {
-      todos: 'Todos',
-      acao: '⚔️ Ação',
-      comedia: '😂 Comédia',
-      terror: '👻 Terror',
-      drama: '🎭 Drama',
-      ficcao: '🚀 Ficção Científica',
-      animacao: '🎨 Animação'
-    };
-  %>
-  <% categories.forEach(cat => { %>
-    <a href="/?category=<%= cat %>" class="chip <%= activeCategory === cat ? 'active' : '' %>">
-      <%= catLabels[cat] || cat %>
-    </a>
-  <% }) %>
-</div>
-
-<div class="grid" id="movieGrid">
-  <% if (movies.length === 0) { %>
-    <div class="empty">
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
-      <p>Nenhum filme nessa categoria.</p>
-    </div>
-  <% } %>
-
-  <% movies.forEach((movie, i) => { %>
-    <%
-      const catLabel = catLabels[movie.category] || movie.category;
-    %>
-    <div class="card" style="animation-delay:<%= i * 0.05 %>s">
-      <div class="card-poster">
-        <img
-          src="<%= movie.poster || 'https://placehold.co/500x281/1c1e27/6b7080?text=Sem+Poster' %>"
-          alt="<%= movie.title %>"
-          loading="lazy"
-          onerror="this.src='https://placehold.co/500x281/1c1e27/6b7080?text=Sem+Poster'"
-        >
-        <span class="card-rank">#<%= movie.rank %></span>
-        <span class="card-badge"><%= catLabel %></span>
-      </div>
-      <div class="card-body">
-        <div class="card-title"><%= movie.title %></div>
-        <div class="card-meta"><%= movie.year %></div>
-
-        <div class="progress-wrap">
-          <div class="progress-info">
-            <span class="vote-count"><%= movie.voteCount.toLocaleString('pt-BR') %> votos</span>
-            <span class="vote-pct"><%= movie.pct %>%</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill <%= movie.rankClass %>" style="width:<%= movie.barW %>%"></div>
-          </div>
-        </div>
-
-        <% if (!user) { %>
-          <a href="/auth/twitch" class="btn-vote">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-            Votar
-          </a>
-        <% } else if (movie.hasVoted) { %>
-          <button class="btn-vote voted" disabled>
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            Votado!
-          </button>
-        <% } else { %>
-          <button
-            class="btn-vote"
-            data-movie-id="<%= movie.id %>"
-            data-movie-title="<%= movie.title %>"
-            onclick="castVote(this)"
-          >
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-            Votar
-          </button>
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <div class="admin-topbar-left">
+        <span class="admin-badge">Admin</span>
+        <% if (activeTab === 'overview') { %><h1>Visão Geral</h1>
+        <% } else if (activeTab === 'movies') { %><h1>Gerenciar Filmes</h1>
+        <% } else if (activeTab === 'add') { %><h1>Adicionar Filme</h1>
+        <% } else if (activeTab === 'edit') { %><h1>Editar Filme</h1>
+        <% } else if (activeTab === 'settings') { %><h1>Configurações</h1>
         <% } %>
       </div>
     </div>
-  <% }) %>
-</div>
 
-<!-- Toast -->
-<div class="toast" id="toast">
-  <span class="toast-dot" id="toastDot"></span>
-  <span id="toastMsg"></span>
-</div>
+    <!-- ═══ OVERVIEW ═══ -->
+    <% if (activeTab === 'overview') { %>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val" style="color:var(--twitch)"><%= movies.filter(m=>m.active).length %></div>
+        <div class="stat-label">Filmes Ativos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:var(--accent)"><%= total.toLocaleString('pt-BR') %></div>
+        <div class="stat-label">Total de Votos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:var(--gold)"><%= movies.length > 0 ? movies[0].voteCount.toLocaleString('pt-BR') : 0 %></div>
+        <div class="stat-label">Votos no 1º Lugar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:var(--green)"><%= movies.length > 0 ? Math.round(total / movies.filter(m=>m.active).length) : 0 %></div>
+        <div class="stat-label">Média / Filme</div>
+      </div>
+    </div>
 
-<script src="/js/main.js"></script>
-</body>
-</html>
-v>
+    <div class="section-title">Ações Rápidas</div>
     <div class="action-row">
       <button class="btn-danger" onclick="adminAction('reset-all','Zerar TODOS os votos?','POST','/api/admin/reset-all-votes')">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -140,13 +93,13 @@ v>
         </div>
         <div class="movie-actions">
           <div class="vote-adj">
-            <button class="vote-btn" onclick="adjustVotes('<%= m.id %>','<%= m.title %>',-10)">−10</button>
-            <button class="vote-btn" onclick="adjustVotes('<%= m.id %>','<%= m.title %>',-1)">−</button>
+            <button class="vote-btn" data-id="<%= m.id %>" data-title="<%= m.title %>" data-delta="-10">−10</button>
+            <button class="vote-btn" data-id="<%= m.id %>" data-title="<%= m.title %>" data-delta="-1">−</button>
             <span class="vote-adj-val" id="vadj-<%= m.id %>"><%= m.voteCount %></span>
-            <button class="vote-btn" onclick="adjustVotes('<%= m.id %>','<%= m.title %>',1)">+</button>
-            <button class="vote-btn" onclick="adjustVotes('<%= m.id %>','<%= m.title %>',10)">+10</button>
+            <button class="vote-btn" data-id="<%= m.id %>" data-title="<%= m.title %>" data-delta="1">+</button>
+            <button class="vote-btn" data-id="<%= m.id %>" data-title="<%= m.title %>" data-delta="10">+10</button>
           </div>
-          <button class="btn-icon" title="Zerar votos" onclick="resetVotes('<%= m.id %>','<%= m.title %>')">
+          <button class="btn-icon" title="Zerar votos" data-action="reset" data-id="<%= m.id %>" data-title="<%= m.title %>">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           </button>
         </div>
@@ -170,19 +123,19 @@ v>
         </div>
         <div class="movie-actions">
           <div class="vote-adj">
-            <button class="vote-btn" onclick="adjustVotes('<%= m.id %>','<%= m.title %>',-10)">−10</button>
-            <button class="vote-btn" onclick="adjustVotes('<%= m.id %>','<%= m.title %>',-1)">−</button>
+            <button class="vote-btn" data-id="<%= m.id %>" data-title="<%= m.title %>" data-delta="-10">−10</button>
+            <button class="vote-btn" data-id="<%= m.id %>" data-title="<%= m.title %>" data-delta="-1">−</button>
             <span class="vote-adj-val" id="vadj2-<%= m.id %>"><%= m.voteCount %></span>
-            <button class="vote-btn" onclick="adjustVotes('<%= m.id %>','<%= m.title %>',1)">+</button>
-            <button class="vote-btn" onclick="adjustVotes('<%= m.id %>','<%= m.title %>',10)">+10</button>
+            <button class="vote-btn" data-id="<%= m.id %>" data-title="<%= m.title %>" data-delta="1">+</button>
+            <button class="vote-btn" data-id="<%= m.id %>" data-title="<%= m.title %>" data-delta="10">+10</button>
           </div>
-          <button class="btn-icon" title="Zerar" onclick="resetVotes('<%= m.id %>','<%= m.title %>')">
+          <button class="btn-icon" title="Zerar" data-action="reset" data-id="<%= m.id %>" data-title="<%= m.title %>">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           </button>
           <a href="/admin/edit/<%= m.id %>" class="btn-icon edit">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
           </a>
-          <button class="btn-icon del" title="Apagar" onclick="deleteMovie('<%= m.id %>','<%= m.title %>')">
+          <button class="btn-icon del" title="Apagar" data-action="delete" data-id="<%= m.id %>" data-title="<%= m.title %>">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
           </button>
         </div>

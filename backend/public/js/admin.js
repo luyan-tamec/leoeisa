@@ -127,21 +127,20 @@ function deleteMovie(id, title) {
 }
 
 /* ══ RESET ALL VOTES ══ */
-function adminAction(type, confirmMsg, method, url) {
-  if (type !== "reset-all") return;
-  showConfirm("Zerar TODOS os Votos", confirmMsg, async () => {
+async function resetAllVotes() {
+  showConfirm("Zerar TODOS os Votos", "Isso vai zerar os votos de todos os filmes e liberar todos os usuários para votar novamente.", async () => {
     try {
-      const res = await fetch(url, {
-        method,
+      const res = await fetch("/api/admin/reset-all-votes", {
+        method: "POST",
         headers: { "Accept": "application/json" },
         credentials: "same-origin",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       document.querySelectorAll("[id^='vadj-'], [id^='vadj2-']").forEach(el => el.textContent = "0");
       document.querySelectorAll("[id^='vcount-']").forEach(el => el.textContent = "0 votos");
-      showToast("Todos os votos foram zerados.", "warn");
+      showToast("Todos os votos zerados! Usuários podem votar novamente.", "warn");
     } catch (err) {
-      console.error("adminAction error:", err);
+      console.error("resetAllVotes error:", err);
       showToast("Erro ao zerar votos.", "err");
     }
   });
@@ -182,6 +181,7 @@ document.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-delta]");
   const resetBtn = e.target.closest("[data-action='reset']");
   const deleteBtn = e.target.closest("[data-action='delete']");
+  const resetAllBtn = e.target.closest("[data-action='reset-all']");
 
   if (btn) {
     const { id, title, delta } = btn.dataset;
@@ -196,6 +196,10 @@ document.addEventListener("click", (e) => {
   if (deleteBtn) {
     const { id, title } = deleteBtn.dataset;
     if (id) deleteMovie(id, title || "");
+    return;
+  }
+  if (resetAllBtn) {
+    resetAllVotes();
     return;
   }
 });
