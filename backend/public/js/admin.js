@@ -39,22 +39,20 @@ function closeConfirm() {
   pendingOk = null;
 }
 
-// Bind no botão confirmar
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("confirmOkBtn");
-  if (btn) {
-    btn.addEventListener("click", () => {
-      const fn = pendingOk;
-      closeConfirm();
-      if (fn) fn();
-    });
-  }
+// Bind no botão confirmar — direto, sem DOMContentLoaded
+const _confirmOkBtn = document.getElementById("confirmOkBtn");
+if (_confirmOkBtn) {
+  _confirmOkBtn.addEventListener("click", () => {
+    const fn = pendingOk;
+    closeConfirm();
+    if (fn) fn();
+  });
+}
 
-  const cancelBtn = document.querySelector("#confirmModal .btn-cancel");
-  if (cancelBtn) {
-    cancelBtn.addEventListener("click", closeConfirm);
-  }
-});
+const _confirmCancelBtn = document.querySelector("#confirmModal .btn-cancel");
+if (_confirmCancelBtn) {
+  _confirmCancelBtn.addEventListener("click", closeConfirm);
+}
 
 /* ══ VOTE ADJUST ══ */
 async function adjustVotes(id, title, delta) {
