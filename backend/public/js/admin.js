@@ -2,30 +2,35 @@
 let toastTimer;
 function showToast(msg, type = "ok") {
   clearTimeout(toastTimer);
-  const toastMsg = document.getElementById("toastMsg");
+  const el = document.getElementById("toast");
+  const msg_el = document.getElementById("toastMsg");
   const dot = document.getElementById("toastDot");
-  const toast = document.getElementById("toast");
-  if (!toastMsg || !dot || !toast) return;
-  toastMsg.textContent = msg;
+  if (!el || !msg_el || !dot) return;
+  msg_el.textContent = msg;
   dot.className = "toast-dot" + (type === "warn" ? " warn" : type === "err" ? " err" : "");
-  toast.classList.add("show");
-  toastTimer = setTimeout(() => toast.classList.remove("show"), 3200);
+  el.classList.add("show");
+  toastTimer = setTimeout(() => el.classList.remove("show"), 3200);
 }
 
-/* ══ CONFIRM ══ */
+/* ══ CONFIRM MODAL ══ */
 let pendingOk = null;
 
 function showConfirm(title, msg, cb) {
+  pendingOk = cb;
+
+  // Tenta usar o modal HTML
   const modal = document.getElementById("confirmModal");
-  if (!modal) {
-    // Modal não existe nessa tab — usa confirm() nativo do browser
-    if (window.confirm(`${title}\n${msg}`)) cb();
+  if (modal) {
+    const titleEl = document.getElementById("confirmTitle");
+    const msgEl = document.getElementById("confirmMsg");
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = msg;
+    modal.classList.add("open");
     return;
   }
-  document.getElementById("confirmTitle").textContent = title;
-  document.getElementById("confirmMsg").textContent = msg;
-  modal.classList.add("open");
-  pendingOk = cb;
+
+  // Fallback: executa direto sem confirmação (mobile não tem confirm confiável)
+  cb();
 }
 
 function closeConfirm() {
@@ -34,31 +39,35 @@ function closeConfirm() {
   pendingOk = null;
 }
 
-// Bind confirm button com verificação segura
-const confirmOkBtn = document.getElementById("confirmOkBtn");
-if (confirmOkBtn) {
-  confirmOkBtn.addEventListener("click", () => {
-    closeConfirm();
-    if (pendingOk) { pendingOk(); pendingOk = null; }
-  });
-}
+// Bind no botão confirmar
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("confirmOkBtn");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const fn = pendingOk;
+      closeConfirm();
+      if (fn) fn();
+    });
+  }
+
+  const cancelBtn = document.querySelector("#confirmModal .btn-cancel");
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", closeConfirm);
+  }
+});
 
 /* ══ VOTE ADJUST ══ */
 async function adjustVotes(id, title, delta) {
   try {
     const res = await fetch(`/api/admin/movies/${id}/adjust-votes`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
       credentials: "same-origin",
       body: JSON.stringify({ delta }),
     });
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const movie = await res.json();
 
-    // Atualiza todos os elementos de contagem desse filme (overview e movies tab)
     [`vadj-${id}`, `vadj2-${id}`].forEach(elId => {
       const el = document.getElementById(elId);
       if (el) el.textContent = movie.voteCount.toLocaleString("pt-BR");
@@ -67,12 +76,13 @@ async function adjustVotes(id, title, delta) {
     if (vcount) vcount.textContent = `${movie.voteCount.toLocaleString("pt-BR")} votos`;
 
     showToast(`${title}: ${movie.voteCount} votos`);
-  } catch {
+  } catch (err) {
+    console.error("adjustVotes error:", err);
     showToast("Erro ao ajustar votos.", "err");
   }
 }
 
-/* ══ RESET VOTES (individual) ══ */
+/* ══ RESET VOTES ══ */
 function resetVotes(id, title) {
   showConfirm("Zerar Votos", `Zerar os votos de "${title}"?`, async () => {
     try {
@@ -81,7 +91,7 @@ function resetVotes(id, title) {
         headers: { "Accept": "application/json" },
         credentials: "same-origin",
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       [`vadj-${id}`, `vadj2-${id}`].forEach(elId => {
         const el = document.getElementById(elId);
@@ -91,7 +101,8 @@ function resetVotes(id, title) {
       if (vcount) vcount.textContent = "0 votos";
 
       showToast(`Votos de "${title}" zerados.`, "warn");
-    } catch {
+    } catch (err) {
+      console.error("resetVotes error:", err);
       showToast("Erro ao zerar votos.", "err");
     }
   });
@@ -106,11 +117,12 @@ function deleteMovie(id, title) {
         headers: { "Accept": "application/json" },
         credentials: "same-origin",
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const row = document.getElementById(`row-${id}`);
       if (row) row.remove();
       showToast(`"${title}" apagado.`, "warn");
-    } catch {
+    } catch (err) {
+      console.error("deleteMovie error:", err);
       showToast("Erro ao apagar filme.", "err");
     }
   });
@@ -118,23 +130,23 @@ function deleteMovie(id, title) {
 
 /* ══ RESET ALL VOTES ══ */
 function adminAction(type, confirmMsg, method, url) {
-  if (type === "reset-all") {
-    showConfirm("Zerar TODOS os Votos", `${confirmMsg} Esta ação é irreversível.`, async () => {
-      try {
-        const res = await fetch(url, {
-          method,
-          headers: { "Accept": "application/json" },
-          credentials: "same-origin",
-        });
-        if (!res.ok) throw new Error();
-        document.querySelectorAll("[id^='vadj-'], [id^='vadj2-']").forEach(el => el.textContent = "0");
-        document.querySelectorAll("[id^='vcount-']").forEach(el => el.textContent = "0 votos");
-        showToast("Todos os votos foram zerados.", "warn");
-      } catch {
-        showToast("Erro ao zerar votos.", "err");
-      }
-    });
-  }
+  if (type !== "reset-all") return;
+  showConfirm("Zerar TODOS os Votos", confirmMsg, async () => {
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Accept": "application/json" },
+        credentials: "same-origin",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      document.querySelectorAll("[id^='vadj-'], [id^='vadj2-']").forEach(el => el.textContent = "0");
+      document.querySelectorAll("[id^='vcount-']").forEach(el => el.textContent = "0 votos");
+      showToast("Todos os votos foram zerados.", "warn");
+    } catch (err) {
+      console.error("adminAction error:", err);
+      showToast("Erro ao zerar votos.", "err");
+    }
+  });
 }
 
 /* ══ EXPORT JSON ══ */
@@ -167,36 +179,30 @@ function applyUrl() {
   if (fileInput) fileInput.value = "";
 }
 
-/* ══ EVENT DELEGATION — captura cliques em todos os botões do admin ══ */
+/* ══ EVENT DELEGATION ══ */
 document.addEventListener("click", (e) => {
-  const target = e.target;
-
-  const btn = target.closest("[data-delta]");
-  const resetBtn = target.closest("[data-action='reset']");
-  const deleteBtn = target.closest("[data-action='delete']");
+  const btn = e.target.closest("[data-delta]");
+  const resetBtn = e.target.closest("[data-action='reset']");
+  const deleteBtn = e.target.closest("[data-action='delete']");
 
   if (btn) {
-    const id = btn.dataset.id;
-    const title = btn.dataset.title;
-    const delta = parseInt(btn.dataset.delta);
-    if (id && !isNaN(delta)) adjustVotes(id, title, delta);
+    const { id, title, delta } = btn.dataset;
+    if (id) adjustVotes(id, title || "", parseInt(delta));
     return;
   }
-
   if (resetBtn) {
-    const id = resetBtn.dataset.id;
-    const title = resetBtn.dataset.title;
-    if (id) resetVotes(id, title);
+    const { id, title } = resetBtn.dataset;
+    if (id) resetVotes(id, title || "");
     return;
   }
-
   if (deleteBtn) {
-    const id = deleteBtn.dataset.id;
-    const title = deleteBtn.dataset.title;
-    if (id) deleteMovie(id, title);
+    const { id, title } = deleteBtn.dataset;
+    if (id) deleteMovie(id, title || "");
     return;
   }
 });
+
+/* ══ ADD MOVIE FORM ══ */
 const addForm = document.getElementById("addMovieForm");
 if (addForm) {
   const fImgFile = document.getElementById("fImgFile");
