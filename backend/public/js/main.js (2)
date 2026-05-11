@@ -81,19 +81,6 @@ async function castVote(btn) {
   }
 }
 
-/* ══ RULES MODAL ══ */
-const btnRules = document.getElementById("btnRules");
-const rulesModal = document.getElementById("rulesModal");
-const btnCloseRules = document.getElementById("btnCloseRules");
-
-if (btnRules && rulesModal) {
-  btnRules.addEventListener("click", () => rulesModal.classList.add("open"));
-  btnCloseRules?.addEventListener("click", () => rulesModal.classList.remove("open"));
-  rulesModal.addEventListener("click", (e) => {
-    if (e.target === rulesModal) rulesModal.classList.remove("open");
-  });
-}
-
 /* ══ EVENT DELEGATION — captura cliques nos botões de voto ══ */
 document.addEventListener("click", (e) => {
   const btn = e.target.closest(".btn-vote[data-movie-id]");
