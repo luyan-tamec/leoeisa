@@ -122,6 +122,44 @@ app.get("/setup", async (req, res) => {
   res.send(`✅ Pronto! <b>${user.displayName}</b> agora é admin. <a href="/admin">Ir para o painel</a>`);
 });
 
+// ── Remove admin route — protegido por SETUP_SECRET ──
+// Uso: /remove-admin?secret=SUA_SETUP_SECRET&id=ID_DO_USUARIO
+app.get("/remove-admin", async (req, res) => {
+  const secret = process.env.SETUP_SECRET;
+  if (!secret || req.query.secret !== secret) {
+    return res.status(403).send("Proibido.");
+  }
+  const userId = req.query.id as string;
+  if (!userId) return res.status(400).send("Faltou o parâmetro ?id=");
+  const { PrismaClient } = await import("@prisma/client");
+  const p = new PrismaClient();
+  const user = await p.user.update({
+    where: { id: userId },
+    data: { isAdmin: false },
+  });
+  await p.$disconnect();
+  res.send(`✅ Admin removido de <b>${user.displayName}</b>. <a href="/admin">Voltar</a>`);
+});
+
+// ── Delete user route — protegido por SETUP_SECRET ──
+// Uso: /delete-user?secret=SUA_SETUP_SECRET&id=ID_DO_USUARIO
+app.get("/delete-user", async (req, res) => {
+  const secret = process.env.SETUP_SECRET;
+  if (!secret || req.query.secret !== secret) {
+    return res.status(403).send("Proibido.");
+  }
+  const userId = req.query.id as string;
+  if (!userId) return res.status(400).send("Faltou o parâmetro ?id=");
+  const { PrismaClient } = await import("@prisma/client");
+  const p = new PrismaClient();
+  const user = await p.user.findUnique({ where: { id: userId } });
+  if (!user) { await p.$disconnect(); return res.status(404).send("Usuário não encontrado."); }
+  await p.vote.deleteMany({ where: { userId } });
+  await p.user.delete({ where: { id: userId } });
+  await p.$disconnect();
+  res.send(`✅ Usuário <b>${user.displayName}</b> excluído com sucesso. <a href="/admin/users">Ver usuários</a>`);
+});
+
 // ── Routes ──
 app.use("/auth", authRouter);
 app.use("/api/movies", moviesRouter);
