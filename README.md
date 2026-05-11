@@ -1,6 +1,6 @@
-# 🎬 CineVote
+# 🎬 votofilm
 
-Enquete de filmes com autenticação Twitch, painel admin e deploy pronto para **Render** (backend + PostgreSQL).
+Enquete de filmes com autenticação Twitch, painel admin e deploy  para **Render** (backend + PostgreSQL).
 
 ---
 
