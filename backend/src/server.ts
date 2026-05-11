@@ -196,7 +196,7 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 });
 
 app.listen(PORT, () => {
-  console.log(`\n🎬  CineVote running on http://localhost:${PORT}`);
+  console.log(`\n🎬  CineVote running on http://cinevote.onrender.com`);
   console.log(`   ENV: ${process.env.NODE_ENV || "development"}\n`);
 });
 
