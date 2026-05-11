@@ -210,6 +210,15 @@ header {
 }
 .btn-rules:hover { background: rgba(255,255,255,.1); border-color: var(--border2); }
 
+@media(max-width: 600px) {
+  header { height: auto; padding: .6rem 1rem; flex-wrap: wrap; gap: .5rem; }
+  .header-right { flex-wrap: nowrap; gap: .4rem; overflow-x: auto; width: 100%; justify-content: flex-end; }
+  .btn-rules { font-size: .75rem; padding: .38rem .65rem; }
+  .btn-admin-toggle { font-size: .75rem; padding: .38rem .65rem; }
+  .user-name { max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8rem; }
+  .btn-logout { font-size: .72rem; padding: .25rem .5rem; }
+}
+
 /* ══ RULES MODAL ══ */
 .rules-modal {
   background: var(--surface); border: 1px solid var(--border);
