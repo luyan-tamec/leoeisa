@@ -1,4 +1,3 @@
-/* ══ TOAST ══ */
 let toastTimer;
 function showToast(msg, type = "ok") {
   clearTimeout(toastTimer);
@@ -12,7 +11,6 @@ function showToast(msg, type = "ok") {
   toastTimer = setTimeout(() => toast.classList.remove("show"), 3200);
 }
 
-/* ══ VOTE ══ */
 async function castVote(btn) {
   const movieId = btn.dataset.movieId;
   const movieTitle = btn.dataset.movieTitle;
@@ -81,7 +79,6 @@ async function castVote(btn) {
   }
 }
 
-/* ══ RULES MODAL ══ */
 const btnRules = document.getElementById("btnRules");
 const rulesModal = document.getElementById("rulesModal");
 const btnCloseRules = document.getElementById("btnCloseRules");
@@ -94,7 +91,6 @@ if (btnRules && rulesModal) {
   });
 }
 
-/* ══ EVENT DELEGATION — captura cliques nos botões de voto ══ */
 document.addEventListener("click", (e) => {
   const btn = e.target.closest(".btn-vote[data-movie-id]");
   if (btn && !btn.disabled && !btn.classList.contains("voted")) {
