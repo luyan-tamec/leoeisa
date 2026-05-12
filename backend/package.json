@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "@prisma/client": "^6.7.0",
-    "cloudinary": "^2.10.0",
     "connect-pg-simple": "^9.0.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
