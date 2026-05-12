@@ -1,184 +1,208 @@
-import { Router, Request, Response } from "express";
-import multer, { FileFilterCallback } from "multer";
-import path from "path";
-import fs from "fs";
-import { prisma } from "../lib/prisma";
-import { requireAdmin } from "../middleware/auth";
+import express from "express";
+import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import { v2 as cloudinary } from "cloudinary";
+import prisma from "../lib/prisma";
 
-const router = Router();
+const router = express.Router();
 
-// All admin routes require admin session
-router.use(requireAdmin);
+/* =========================
+   CLOUDINARY CONFIG
+========================= */
 
-// ── Multer config ──
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (_req: Request, _file: Express.Multer.File, cb: (e: Error | null, dest: string) => void) =>
-    cb(null, UPLOAD_DIR),
-  filename: (_req: Request, file: Express.Multer.File, cb: (e: Error | null, name: string) => void) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-    cb(null, unique + path.extname(file.originalname));
-  },
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+/* =========================
+   MULTER CLOUDINARY
+========================= */
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async () => ({
+    folder: "movies",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+  }),
+});
+
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
-    if (file.mimetype.startsWith("image/")) cb(null, true);
-    else cb(new Error("Only images allowed"));
+  limits: {
+    fileSize: 5 * 1024 * 1024,
   },
 });
 
-// GET /api/admin/stats
-router.get("/stats", async (_req: Request, res: Response) => {
-  const [movieCount, totalVotes, topMovie] = await Promise.all([
-    prisma.movie.count({ where: { active: true } }),
-    prisma.vote.count(),
-    prisma.movie.findFirst({ where: { active: true }, orderBy: { voteCount: "desc" } }),
-  ]);
+/* =========================
+   GET MOVIES
+========================= */
 
-  const avgVotes = movieCount > 0 ? Math.round(totalVotes / movieCount) : 0;
+router.get("/movies", async (_req, res) => {
+  try {
+    const movies = await prisma.movie.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-  res.json({ movieCount, totalVotes, topMovie, avgVotes });
-});
-
-// GET /api/admin/movies — all movies (including inactive)
-router.get("/movies", async (_req: Request, res: Response) => {
-  const movies = await prisma.movie.findMany({
-    orderBy: [{ active: "desc" }, { voteCount: "desc" }],
-  });
-  res.json(movies);
-});
-
-// POST /api/admin/movies — create
-router.post("/movies", upload.single("poster"), async (req: Request, res: Response) => {
-  const { title, year, category, description, voteCount, posterUrl } = req.body;
-
-  if (!title || !category) {
-    return res.status(400).json({ error: "title and category are required" });
+    res.json(movies);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Erro ao buscar filmes",
+    });
   }
-
-  let poster: string | undefined = posterUrl || undefined;
-  if (req.file) {
-    poster = `/uploads/${req.file.filename}`;
-  }
-
-  const movie = await prisma.movie.create({
-    data: {
-      title: String(title).trim(),
-      year: parseInt(year) || new Date().getFullYear(),
-      category: String(category),
-      description: description ? String(description).trim() : undefined,
-      poster,
-      voteCount: Math.max(0, parseInt(voteCount) || 0),
-    },
-  });
-
-  res.status(201).json(movie);
 });
 
-// PUT /api/admin/movies/:id — update
-router.put("/movies/:id", upload.single("poster"), async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { title, year, category, description, voteCount, posterUrl, active } = req.body;
+/* =========================
+   CREATE MOVIE
+========================= */
 
-  const existing = await prisma.movie.findUnique({ where: { id } });
-  if (!existing) return res.status(404).json({ error: "Movie not found" });
+router.post(
+  "/movies",
+  upload.single("poster"),
+  async (req, res) => {
+    try {
+      const {
+        title,
+        description,
+        category,
+        year,
+        videoUrl,
+      } = req.body;
 
-  let poster = existing.poster;
-  if (req.file) {
-    poster = `/uploads/${req.file.filename}`;
-    // Remove old local file if any
-    if (existing.poster?.startsWith("/uploads/")) {
-      const old = path.join(process.cwd(), "public", existing.poster);
-      if (fs.existsSync(old)) fs.unlinkSync(old);
+      const poster = req.file
+        ? (req.file as any).path
+        : null;
+
+      const movie = await prisma.movie.create({
+        data: {
+          title,
+          description,
+          category,
+          year: Number(year),
+          videoUrl,
+          poster,
+        },
+      });
+
+      res.status(201).json(movie);
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).json({
+        error: "Erro ao criar filme",
+      });
     }
-  } else if (posterUrl !== undefined) {
-    poster = posterUrl || null;
   }
+);
 
-  const movie = await prisma.movie.update({
-    where: { id },
-    data: {
-      ...(title && { title: String(title).trim() }),
-      ...(year && { year: parseInt(year) }),
-      ...(category && { category: String(category) }),
-      ...(description !== undefined && { description: String(description).trim() }),
-      poster,
-      ...(voteCount !== undefined && { voteCount: Math.max(0, parseInt(voteCount) || 0) }),
-      ...(active !== undefined && { active: active === "true" || active === true }),
-    },
-  });
+/* =========================
+   UPDATE MOVIE
+========================= */
 
-  res.json(movie);
-});
+router.put(
+  "/movies/:id",
+  upload.single("poster"),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
 
-// DELETE /api/admin/movies/:id
-router.delete("/movies/:id", async (req: Request, res: Response) => {
-  const { id } = req.params;
-  await prisma.vote.deleteMany({ where: { movieId: id } });
-  await prisma.movie.delete({ where: { id } });
-  res.json({ success: true });
-});
+      const movieExists = await prisma.movie.findUnique({
+        where: {
+          id,
+        },
+      });
 
-// POST /api/admin/movies/:id/reset-votes
-router.post("/movies/:id/reset-votes", async (req: Request, res: Response) => {
-  const { id } = req.params;
-  await prisma.$transaction([
-    prisma.vote.deleteMany({ where: { movieId: id } }),
-    prisma.movie.update({ where: { id }, data: { voteCount: 0 } }),
-  ]);
-  res.json({ success: true });
-});
+      if (!movieExists) {
+        return res.status(404).json({
+          error: "Filme não encontrado",
+        });
+      }
 
-// POST /api/admin/reset-all-votes
-router.post("/reset-all-votes", async (_req: Request, res: Response) => {
-  await prisma.$transaction([
-    prisma.vote.deleteMany(),
-    prisma.movie.updateMany({ data: { voteCount: 0 } }),
-  ]);
-  res.json({ success: true });
-});
+      const updateData: any = {
+        title: req.body.title,
+        description: req.body.description,
+        category: req.body.category,
+        year: Number(req.body.year),
+        videoUrl: req.body.videoUrl,
+      };
 
-// POST /api/admin/movies/:id/adjust-votes
-router.post("/movies/:id/adjust-votes", async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const delta = parseInt(req.body.delta) || 0;
+      if (req.file) {
+        updateData.poster = (req.file as any).path;
+      }
 
-  const movie = await prisma.movie.findUnique({ where: { id } });
-  if (!movie) return res.status(404).json({ error: "Movie not found" });
+      const movie = await prisma.movie.update({
+        where: {
+          id,
+        },
+        data: updateData,
+      });
 
-  const newCount = Math.max(0, movie.voteCount + delta);
-  const updated = await prisma.movie.update({
-    where: { id },
-    data: { voteCount: newCount },
-  });
+      res.json(movie);
+    } catch (error) {
+      console.error(error);
 
-  res.json(updated);
-});
+      res.status(500).json({
+        error: "Erro ao atualizar filme",
+      });
+    }
+  }
+);
 
-// POST /api/admin/users/:id/toggle-admin
-router.post("/users/:id/toggle-admin", async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { isAdmin } = req.body;
+/* =========================
+   DELETE MOVIE
+========================= */
 
-  const user = await prisma.user.update({
-    where: { id },
-    data: { isAdmin: Boolean(isAdmin) },
-  });
+router.delete("/movies/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  res.json({ success: true, isAdmin: user.isAdmin });
-});
+    const movie = await prisma.movie.findUnique({
+      where: {
+        id,
+      },
+    });
 
-// GET /api/admin/users
-router.get("/users", async (_req: Request, res: Response) => {
-  const users = await prisma.user.findMany({
-    orderBy: { createdAt: "desc" },
-    include: { _count: { select: { votes: true } } },
-  });
-  res.json(users);
+    if (!movie) {
+      return res.status(404).json({
+        error: "Filme não encontrado",
+      });
+    }
+
+    /* REMOVE IMAGEM DO CLOUDINARY */
+
+    if (movie.poster) {
+      try {
+        const parts = movie.poster.split("/");
+        const fileName = parts[parts.length - 1];
+        const publicId =
+          "movies/" + fileName.split(".")[0];
+
+        await cloudinary.uploader.destroy(publicId);
+      } catch (err) {
+        console.error("Erro ao deletar imagem:", err);
+      }
+    }
+
+    await prisma.movie.delete({
+      where: {
+        id,
+      },
+    });
+
+    res.json({
+      success: true,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: "Erro ao deletar filme",
+    });
+  }
 });
 
 export default router;
