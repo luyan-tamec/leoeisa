@@ -2,7 +2,7 @@ import express from "express";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { v2 as cloudinary } from "cloudinary";
-import prisma from "../lib/prisma";
+import { prisma } from "../lib/prisma";
 
 const router = express.Router();
 
