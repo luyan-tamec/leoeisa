@@ -64,6 +64,11 @@ const PgSession = ConnectPgSimple(session);
 
 app.use(
   session({
+    store: new PgSession({
+      conString: process.env.DATABASE_URL,
+      tableName: "session",
+      createTableIfMissing: true,
+    }),
     secret: process.env.SESSION_SECRET || "change-me-in-production",
     resave: false,
     saveUninitialized: false,
