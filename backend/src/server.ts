@@ -18,7 +18,7 @@ import adminRouter from "./routes/admin";
 import pagesRouter from "./routes/pages";
 
 const app = express();
-const PORT = parseInt(process.env.PORT || "3000", 10);
+const PORT = parseInt(process.env.PORT);
 const isDev = process.env.NODE_ENV !== "production";
 
 // ── Trust proxy — DEVE ser antes de tudo (necessário no Render) ──
