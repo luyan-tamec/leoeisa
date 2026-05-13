@@ -18,7 +18,7 @@ import adminRouter from "./routes/admin";
 import pagesRouter from "./routes/pages";
 
 const app = express();
-const PORT = parseInt(process.env.PORT || "3000", 10);
+const port = parseInt(process.env.PORT || "3000", 10);
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -195,8 +195,8 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   console.error(err.stack);
   res.status(500).render("500", { user: null, message: isDev ? err.message : "Internal server error" });
 });
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+app.listen(port, () => {
+  console.log(`Servidor rodando na porta ${port}`);
 });
 
 export default app;
