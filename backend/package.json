@@ -2,11 +2,13 @@
   "name": "cinevote-backend",
   "version": "1.0.0",
   "private": true,
+  {
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc",
+    "dev": "tsx watch src/server.ts",
+    "build": "prisma generate && tsc",
     "start": "node dist/server.js"
-  },
+  }
+}
   "dependencies": {
     "@prisma/client": "^6.7.0",
     "connect-pg-simple": "^9.0.1",
