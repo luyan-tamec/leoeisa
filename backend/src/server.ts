@@ -18,8 +18,7 @@ import adminRouter from "./routes/admin";
 import pagesRouter from "./routes/pages";
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
-
+const PORT = parseInt(process.env.PORT || "3000", 10);
 const isDev = process.env.NODE_ENV !== "production";
 
 // ── Trust proxy — DEVE ser antes de tudo (necessário no Render) ──
@@ -195,8 +194,10 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   console.error(err.stack);
   res.status(500).render("500", { user: null, message: isDev ? err.message : "Internal server error" });
 });
+
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`\n🎬  CineVote running on http://cinevote.onrender.com`);
+  console.log(`   ENV: ${process.env.NODE_ENV || "development"}\n`);
 });
 
 export default app;
