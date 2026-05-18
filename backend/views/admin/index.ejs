@@ -110,10 +110,14 @@
 
     <!-- ═══ MOVIES LIST ═══ -->
     <% if (activeTab === 'movies') { %>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:1rem;">
-      <a href="/admin?tab=add" class="btn-primary btn-sm">+ Novo Filme</a>
+    <div style="display:flex;gap:.7rem;margin-bottom:1rem;align-items:center;flex-wrap:wrap;">
+      <div class="search-wrap">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input class="search-input" id="movieSearch" placeholder="Buscar filme..." autocomplete="off">
+      </div>
+      <a href="/admin?tab=add" class="btn-primary btn-sm" style="margin-left:auto;">+ Novo Filme</a>
     </div>
-    <div class="movie-list">
+    <div class="movie-list" id="movieListContainer">
       <% movies.forEach(m => { %>
       <div class="movie-row" id="row-<%= m.id %>">
         <img class="movie-thumb" src="<%= m.poster || 'https://placehold.co/80x54/1c1e27/6b7080?text=?' %>" onerror="this.src='https://placehold.co/80x54/1c1e27/6b7080?text=?'" alt="">
@@ -277,5 +281,18 @@
 <div class="toast" id="toast"><span class="toast-dot" id="toastDot"></span><span id="toastMsg"></span></div>
 
 <script src="/js/admin.js"></script>
+<script>
+// ── Busca de filmes ──
+const movieSearch = document.getElementById("movieSearch");
+if (movieSearch) {
+  movieSearch.addEventListener("input", () => {
+    const q = movieSearch.value.toLowerCase().trim();
+    document.querySelectorAll("#movieListContainer .movie-row").forEach(row => {
+      const name = row.querySelector(".movie-row-title")?.textContent.toLowerCase() || "";
+      row.style.display = name.includes(q) ? "" : "none";
+    });
+  });
+}
+</script>
 </body>
 </html>
