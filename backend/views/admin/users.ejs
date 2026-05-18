@@ -79,81 +79,39 @@
 
 <div class="toast" id="toast"><span class="toast-dot" id="toastDot"></span><span id="toastMsg"></span></div>
 
-<!-- Confirm Modal -->
-<div class="modal-overlay" id="confirmModal">
-  <div class="modal">
-    <div class="modal-icon danger">
-      <svg fill="none" viewBox="0 0 24 24" stroke="#e74c3c" width="26" height="26"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-    </div>
-    <h2 id="confirmTitle">Confirmar</h2>
-    <p id="confirmMsg"></p>
-    <div class="modal-actions">
-      <button class="btn-cancel" id="confirmCancelBtn">Cancelar</button>
-      <button class="btn-danger" id="confirmOkBtn">Confirmar</button>
-    </div>
-  </div>
-</div>
-
 <script src="/js/admin.js"></script>
 <script>
-// Bind modal buttons
-const _okBtn = document.getElementById("confirmOkBtn");
-const _cancelBtn = document.getElementById("confirmCancelBtn");
-if (_okBtn) {
-  _okBtn.addEventListener("click", () => {
-    const fn = pendingOk;
-    closeConfirm();
-    if (fn) fn();
-  });
-}
-if (_cancelBtn) _cancelBtn.addEventListener("click", closeConfirm);
-
 async function resetUserVotes(id, name, count) {
-  showConfirm(
-    "Devolver Votos",
-    `Devolver ${count} voto(s) para "${name}"? Os filmes terão suas contagens decrementadas.`,
-    async () => {
-      try {
-        const res = await fetch(`/api/admin/users/${id}/reset-votes`, {
-          method: 'POST',
-          headers: { 'Accept': 'application/json' },
-          credentials: 'same-origin',
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error();
-        showToast(`${data.votesReturned} voto(s) devolvidos para "${name}".`, 'warn');
-        const btn = document.getElementById(`resetbtn-${id}`);
-        if (btn) {
-          btn.outerHTML = `<span style="font-size:.75rem;color:var(--muted);padding:.3rem .5rem;">Sem votos</span>`;
-        }
-      } catch {
-        showToast('Erro ao devolver votos.', 'err');
-      }
-    }
-  );
+  try {
+    const res = await fetch(`/api/admin/users/${id}/reset-votes`, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' },
+      credentials: 'same-origin',
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error();
+    showToast(`${data.votesReturned} voto(s) devolvidos para "${name}".`, 'warn');
+    const btn = document.getElementById(`resetbtn-${id}`);
+    if (btn) btn.outerHTML = `<span style="font-size:.75rem;color:var(--muted);padding:.3rem .5rem;">Sem votos</span>`;
+  } catch {
+    showToast('Erro ao devolver votos.', 'err');
+  }
 }
 
 async function toggleAdmin(id, name, makeAdmin) {
-  const action = makeAdmin ? 'tornar admin' : 'remover admin de';
-  showConfirm(
-    makeAdmin ? "Tornar Admin" : "Remover Admin",
-    `Tem certeza que deseja ${action} "${name}"?`,
-    async () => {
-      try {
-        const res = await fetch(`/api/admin/users/${id}/toggle-admin`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ isAdmin: makeAdmin }),
-        });
-        if (!res.ok) throw new Error();
-        showToast(`${name} ${makeAdmin ? 'agora é admin' : 'não é mais admin'}.`);
-        setTimeout(() => location.reload(), 1000);
-      } catch {
-        showToast('Erro ao atualizar usuário.', 'err');
-      }
-    }
-  );
+  try {
+    const res = await fetch(`/api/admin/users/${id}/toggle-admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ isAdmin: makeAdmin }),
+    });
+    if (!res.ok) throw new Error();
+    showToast(`${name} ${makeAdmin ? 'agora é admin' : 'não é mais admin'}.`);
+    setTimeout(() => location.reload(), 1200);
+  } catch {
+    showToast('Erro ao atualizar usuário.', 'err');
+  }
 }
 </script>
 </body></html>
