@@ -181,41 +181,4 @@ router.get("/users", async (_req: Request, res: Response) => {
   res.json(users);
 });
 
-// POST /api/admin/users/:id/reset-votes — devolve votos ao usuário sem zerar filmes
-router.post("/users/:id/reset-votes", async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  // Busca todos os votos do usuário com o movieId
-  const userVotes = await prisma.vote.findMany({
-    where: { userId: id },
-    select: { movieId: true },
-  });
-
-  if (userVotes.length === 0) {
-    return res.json({ success: true, message: "Usuário não tinha votos.", votesReturned: 0 });
-  }
-
-  // Para cada filme votado, decrementa o voteCount
-  const decrements = userVotes.map((v) =>
-    prisma.movie.update({
-      where: { id: v.movieId },
-      data: { voteCount: { decrement: 1 } },
-    })
-  );
-
-  // Apaga os votos do usuário + decrementa filmes atomicamente
-  await prisma.$transaction([
-    prisma.vote.deleteMany({ where: { userId: id } }),
-    ...decrements,
-  ]);
-
-  // Garante que nenhum filme ficou com voteCount negativo
-  await prisma.movie.updateMany({
-    where: { voteCount: { lt: 0 } },
-    data: { voteCount: 0 },
-  });
-
-  res.json({ success: true, votesReturned: userVotes.length });
-});
-
 export default router;
