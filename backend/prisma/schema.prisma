@@ -1,5 +1,5 @@
-// This is your Prisma schema file.
-// Learn more about it in the docs: https://pris.ly/d/prisma-schema   
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -21,6 +21,7 @@ model User {
   updatedAt     DateTime @updatedAt
 
   votes         Vote[]
+  logs          Log[]
 
   @@map("users")
 }
@@ -38,6 +39,7 @@ model Movie {
   updatedAt   DateTime @updatedAt
 
   votes       Vote[]
+  logs        Log[]
 
   @@map("movies")
 }
@@ -62,4 +64,29 @@ model Session {
 
   @@index([expire], name: "IDX_session_expire")
   @@map("session")
+}
+
+// Ações possíveis:
+// VOTE         — usuário votou em um filme
+// VOTE_RETURN  — votos de um usuário foram devolvidos pelo admin
+// MOVIE_ADD    — filme adicionado pelo admin
+// MOVIE_REMOVE — filme removido pelo admin
+// MOVIE_EDIT   — filme editado pelo admin
+// RESET_ALL    — todos os votos zerados pelo admin
+// RESET_MOVIE  — votos de um filme zerados pelo admin
+
+model Log {
+  id        String   @id @default(cuid())
+  action    String
+  userId    String?
+  movieId   String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  movie     Movie?   @relation(fields: [movieId], references: [id], onDelete: SetNull)
+
+  @@index([action])
+  @@index([createdAt(sort: Desc)])
+  @@map("logs")
 }

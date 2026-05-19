@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAuth } from "../middleware/auth";
+import { writeLog } from "../lib/logger";
 
 const router = Router();
 
@@ -16,7 +17,6 @@ router.get("/", async (req: Request, res: Response) => {
     orderBy: { voteCount: "desc" },
   });
 
-  // If user logged in, fetch their votes
   let userVotedIds: Set<string> = new Set();
   if (req.session.userId) {
     const votes = await prisma.vote.findMany({
@@ -44,21 +44,26 @@ router.post("/:id/vote", requireAuth, async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = req.session.userId!;
 
-  // Check movie exists
   const movie = await prisma.movie.findUnique({ where: { id, active: true } });
   if (!movie) return res.status(404).json({ error: "Movie not found" });
 
-  // Check already voted
   const existing = await prisma.vote.findUnique({
     where: { userId_movieId: { userId, movieId: id } },
   });
   if (existing) return res.status(409).json({ error: "Already voted" });
 
-  // Create vote + increment count atomically
   await prisma.$transaction([
     prisma.vote.create({ data: { userId, movieId: id } }),
     prisma.movie.update({ where: { id }, data: { voteCount: { increment: 1 } } }),
   ]);
+
+  // ── Log ──
+  await writeLog({
+    action:  "VOTE",
+    userId,
+    movieId: id,
+    meta:    { movieTitle: movie.title },
+  });
 
   const updated = await prisma.movie.findUnique({ where: { id } });
   res.json({ success: true, voteCount: updated?.voteCount });

@@ -4,10 +4,10 @@ import path from "path";
 import fs from "fs";
 import { prisma } from "../lib/prisma";
 import { requireAdmin } from "../middleware/auth";
+import { writeLog } from "../lib/logger";
 
 const router = Router();
 
-// All admin routes require admin session
 router.use(requireAdmin);
 
 // ── Multer config ──
@@ -40,11 +40,10 @@ router.get("/stats", async (_req: Request, res: Response) => {
   ]);
 
   const avgVotes = movieCount > 0 ? Math.round(totalVotes / movieCount) : 0;
-
   res.json({ movieCount, totalVotes, topMovie, avgVotes });
 });
 
-// GET /api/admin/movies — all movies (including inactive)
+// GET /api/admin/movies
 router.get("/movies", async (_req: Request, res: Response) => {
   const movies = await prisma.movie.findMany({
     orderBy: [{ active: "desc" }, { voteCount: "desc" }],
@@ -52,7 +51,7 @@ router.get("/movies", async (_req: Request, res: Response) => {
   res.json(movies);
 });
 
-// POST /api/admin/movies — create
+// POST /api/admin/movies — criar
 router.post("/movies", upload.single("poster"), async (req: Request, res: Response) => {
   const { title, year, category, description, voteCount, posterUrl } = req.body;
 
@@ -61,25 +60,31 @@ router.post("/movies", upload.single("poster"), async (req: Request, res: Respon
   }
 
   let poster: string | undefined = posterUrl || undefined;
-  if (req.file) {
-    poster = `/uploads/${req.file.filename}`;
-  }
+  if (req.file) poster = `/uploads/${req.file.filename}`;
 
   const movie = await prisma.movie.create({
     data: {
-      title: String(title).trim(),
-      year: parseInt(year) || new Date().getFullYear(),
-      category: String(category),
+      title:     String(title).trim(),
+      year:      parseInt(year) || new Date().getFullYear(),
+      category:  String(category),
       description: description ? String(description).trim() : undefined,
       poster,
       voteCount: Math.max(0, parseInt(voteCount) || 0),
     },
   });
 
+  // ── Log ──
+  await writeLog({
+    action:  "MOVIE_ADD",
+    userId:  req.session.userId,
+    movieId: movie.id,
+    meta:    { title: movie.title, year: movie.year, category: movie.category },
+  });
+
   res.status(201).json(movie);
 });
 
-// PUT /api/admin/movies/:id — update
+// PUT /api/admin/movies/:id — editar
 router.put("/movies/:id", upload.single("poster"), async (req: Request, res: Response) => {
   const { id } = req.params;
   const { title, year, category, description, voteCount, posterUrl, active } = req.body;
@@ -90,7 +95,6 @@ router.put("/movies/:id", upload.single("poster"), async (req: Request, res: Res
   let poster = existing.poster;
   if (req.file) {
     poster = `/uploads/${req.file.filename}`;
-    // Remove old local file if any
     if (existing.poster?.startsWith("/uploads/")) {
       const old = path.join(process.cwd(), "public", existing.poster);
       if (fs.existsSync(old)) fs.unlinkSync(old);
@@ -102,14 +106,22 @@ router.put("/movies/:id", upload.single("poster"), async (req: Request, res: Res
   const movie = await prisma.movie.update({
     where: { id },
     data: {
-      ...(title && { title: String(title).trim() }),
-      ...(year && { year: parseInt(year) }),
-      ...(category && { category: String(category) }),
+      ...(title     && { title: String(title).trim() }),
+      ...(year      && { year: parseInt(year) }),
+      ...(category  && { category: String(category) }),
       ...(description !== undefined && { description: String(description).trim() }),
       poster,
       ...(voteCount !== undefined && { voteCount: Math.max(0, parseInt(voteCount) || 0) }),
-      ...(active !== undefined && { active: active === "true" || active === true }),
+      ...(active    !== undefined && { active: active === "true" || active === true }),
     },
+  });
+
+  // ── Log ──
+  await writeLog({
+    action:  "MOVIE_EDIT",
+    userId:  req.session.userId,
+    movieId: id,
+    meta:    { title: movie.title },
   });
 
   res.json(movie);
@@ -118,28 +130,66 @@ router.put("/movies/:id", upload.single("poster"), async (req: Request, res: Res
 // DELETE /api/admin/movies/:id
 router.delete("/movies/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
+
+  const movie = await prisma.movie.findUnique({ where: { id } });
+
   await prisma.vote.deleteMany({ where: { movieId: id } });
   await prisma.movie.delete({ where: { id } });
+
+  // ── Log ──
+  await writeLog({
+    action: "MOVIE_REMOVE",
+    userId: req.session.userId,
+    meta:   { movieId: id, title: movie?.title ?? "?" },
+  });
+
   res.json({ success: true });
 });
 
 // POST /api/admin/movies/:id/reset-votes
 router.post("/movies/:id/reset-votes", async (req: Request, res: Response) => {
   const { id } = req.params;
+
+  const movie = await prisma.movie.findUnique({ where: { id } });
+
   await prisma.$transaction([
     prisma.vote.deleteMany({ where: { movieId: id } }),
     prisma.movie.update({ where: { id }, data: { voteCount: 0 } }),
   ]);
+
+  // ── Log ──
+  await writeLog({
+    action:  "RESET_MOVIE",
+    userId:  req.session.userId,
+    movieId: id,
+    meta:    { title: movie?.title ?? "?" },
+  });
+
   res.json({ success: true });
 });
 
 // POST /api/admin/reset-all-votes
-router.post("/reset-all-votes", async (_req: Request, res: Response) => {
+router.post("/reset-all-votes", async (req: Request, res: Response) => {
   await prisma.$transaction([
     prisma.vote.deleteMany(),
     prisma.movie.updateMany({ data: { voteCount: 0 } }),
   ]);
+
+  // ── Log ──
+  await writeLog({
+    action: "RESET_ALL",
+    userId: req.session.userId,
+  });
+
   res.json({ success: true });
+});
+
+// DELETE /api/admin/logs — limpar logs (todos ou por tipo)
+router.delete("/logs", async (req: Request, res: Response) => {
+  const { action } = req.query as { action?: string };
+  const where = action ? { action } : {};
+  const { count } = await prisma.log.deleteMany({ where });
+  res.json({ success: true, deleted: count });
 });
 
 // POST /api/admin/movies/:id/adjust-votes
@@ -181,11 +231,12 @@ router.get("/users", async (_req: Request, res: Response) => {
   res.json(users);
 });
 
-// POST /api/admin/users/:id/reset-votes — devolve votos ao usuário sem zerar filmes
+// POST /api/admin/users/:id/reset-votes
 router.post("/users/:id/reset-votes", async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  // Busca todos os votos do usuário com o movieId
+  const targetUser = await prisma.user.findUnique({ where: { id } });
+
   const userVotes = await prisma.vote.findMany({
     where: { userId: id },
     select: { movieId: true },
@@ -195,24 +246,32 @@ router.post("/users/:id/reset-votes", async (req: Request, res: Response) => {
     return res.json({ success: true, message: "Usuário não tinha votos.", votesReturned: 0 });
   }
 
-  // Para cada filme votado, decrementa o voteCount
   const decrements = userVotes.map((v) =>
     prisma.movie.update({
       where: { id: v.movieId },
-      data: { voteCount: { decrement: 1 } },
+      data:  { voteCount: { decrement: 1 } },
     })
   );
 
-  // Apaga os votos do usuário + decrementa filmes atomicamente
   await prisma.$transaction([
     prisma.vote.deleteMany({ where: { userId: id } }),
     ...decrements,
   ]);
 
-  // Garante que nenhum filme ficou com voteCount negativo
   await prisma.movie.updateMany({
     where: { voteCount: { lt: 0 } },
-    data: { voteCount: 0 },
+    data:  { voteCount: 0 },
+  });
+
+  // ── Log ──
+  await writeLog({
+    action: "VOTE_RETURN",
+    userId: req.session.userId,
+    meta:   {
+      targetUserId:      id,
+      targetDisplayName: targetUser?.displayName ?? "?",
+      votesReturned:     userVotes.length,
+    },
   });
 
   res.json({ success: true, votesReturned: userVotes.length });

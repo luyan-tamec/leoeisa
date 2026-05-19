@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAdmin } from "../middleware/auth";
 
@@ -90,10 +90,13 @@ router.get("/admin", requireAdmin, async (req: Request, res: Response) => {
   });
 });
 
-// GET /admin/edit/:id — edit movie page
+// GET /admin/edit/:id
 router.get("/admin/edit/:id", requireAdmin, async (req: Request, res: Response) => {
   const movie = await prisma.movie.findUnique({ where: { id: req.params.id } });
-  if (!movie) return res.status(404).render("404", { user: req.session.userId ? { displayName: req.session.displayName, isAdmin: true } : null });
+  if (!movie)
+    return res.status(404).render("404", {
+      user: req.session.userId ? { displayName: req.session.displayName, isAdmin: true } : null,
+    });
 
   res.render("admin/edit", {
     movie,
@@ -108,7 +111,7 @@ router.get("/admin/edit/:id", requireAdmin, async (req: Request, res: Response) 
   });
 });
 
-// GET /admin/users — manage users
+// GET /admin/users
 router.get("/admin/users", requireAdmin, async (req: Request, res: Response) => {
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
@@ -117,6 +120,45 @@ router.get("/admin/users", requireAdmin, async (req: Request, res: Response) => 
 
   res.render("admin/users", {
     users,
+    user: {
+      id: req.session.userId,
+      username: req.session.username,
+      displayName: req.session.displayName,
+      profileImage: req.session.profileImage,
+      isAdmin: req.session.isAdmin,
+    },
+  });
+});
+
+// GET /admin/logs — página oculta, sem link no nav, só admin
+router.get("/admin/logs", requireAdmin, async (req: Request, res: Response) => {
+  const PAGE_SIZE = 50;
+  const page   = Math.max(1, parseInt(req.query.page as string) || 1);
+  const action = (req.query.action as string) || "";
+
+  const where = action ? { action } : {};
+
+  const [logs, total] = await Promise.all([
+    prisma.log.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip:  (page - 1) * PAGE_SIZE,
+      take:  PAGE_SIZE,
+      include: {
+        user:  { select: { displayName: true, username: true, profileImage: true } },
+        movie: { select: { title: true } },
+      },
+    }),
+    prisma.log.count({ where }),
+  ]);
+
+  res.render("admin/logs", {
+    logs,
+    total,
+    page,
+    pageSize:  PAGE_SIZE,
+    totalPages: Math.ceil(total / PAGE_SIZE),
+    activeAction: action,
     user: {
       id: req.session.userId,
       username: req.session.username,
