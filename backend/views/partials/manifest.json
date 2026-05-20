@@ -1,0 +1,12 @@
+{
+  "background_color": "#ffffff",
+  "description": "Vote no seu filme favorito! Conecte sua conta Twitch e participe da enquete.",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "cinevote.onrender",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "cinevote.onrender",
+  "start_url": "/",
+  "theme_color": "#ffffff"
+}
