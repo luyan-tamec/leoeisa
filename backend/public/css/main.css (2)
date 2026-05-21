@@ -112,26 +112,6 @@ header {
 .chip.active { background: var(--twitch); border-color: var(--twitch); color: #fff; box-shadow: 0 0 16px var(--twitch-glow); }
 
 
-.search-wrap {
-  display: flex; align-items: center; gap: .5rem;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; padding: .45rem .85rem;
-  transition: border-color .2s;
-}
-.search-wrap:focus-within { border-color: var(--twitch); }
-.search-wrap svg { color: var(--muted); flex-shrink: 0; }
-.search-input {
-  background: transparent; border: none; outline: none;
-  color: var(--text); font-size: .85rem; width: 100%;
-  font-family: inherit;
-}
-.search-input::placeholder { color: var(--muted); }
-
-.search-bar {
-  padding: 0 clamp(1rem,5vw,3rem) 1rem;
-  position: relative; z-index: 1;
-}
-
 .grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
   gap: 1.4rem; padding: 0 clamp(1rem,5vw,3rem) 4rem; position: relative; z-index: 1;
