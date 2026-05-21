@@ -41,12 +41,6 @@
   <% }) %>
 </div>
 
-<div class="search-wrap" style="margin: .8rem 0 1rem;">
-  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-  <input class="search-input" id="movieSearch" placeholder="Buscar filme..." autocomplete="off">
-</div>
-<p id="noResults" style="display:none;text-align:center;color:var(--muted);padding:2rem 0;font-size:.9rem;">Nenhum filme encontrado.</p>
-
 <div class="grid" id="movieGrid">
   <% if (movies.length === 0) { %>
     <div class="empty">
@@ -59,7 +53,7 @@
     <%
       const catLabel = catLabels[movie.category] || movie.category;
     %>
-    <div class="card" style="animation-delay:<%= i * 0.05 %>s" data-title="<%= movie.title.toLowerCase() %>">
+    <div class="card" style="animation-delay:<%= i * 0.05 %>s">
       <div class="card-poster">
         <img
           src="<%= movie.poster || 'https://placehold.co/500x281/1c1e27/6b7080?text=Sem+Poster' %>"
@@ -226,26 +220,5 @@ Fica terminantemente proibida a indicação de:
 </div>
 
 <script src="/js/main.js"></script>
-<script>
-  const movieSearch = document.getElementById('movieSearch');
-  const noResults   = document.getElementById('noResults');
-
-  if (movieSearch) {
-    movieSearch.addEventListener('input', function() {
-      const q = this.value.toLowerCase().trim();
-      const cards = document.querySelectorAll('#movieGrid .card');
-      let visible = 0;
-
-      cards.forEach(function(card) {
-        const title = card.getAttribute('data-title') || '';
-        const show  = !q || title.includes(q);
-        card.style.display = show ? '' : 'none';
-        if (show) visible++;
-      });
-
-      noResults.style.display = visible === 0 && q ? 'block' : 'none';
-    });
-  }
-</script>
 </body>
 </html>
