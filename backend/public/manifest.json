@@ -5,7 +5,7 @@
   "start_url": "https://cinevote.onrender.com/",
   "scope": "https://cinevote.onrender.com/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#0f0f0f",
   "theme_color": "#111827",
   "lang": "pt-BR",
