@@ -132,6 +132,7 @@ header {
   position: relative; z-index: 1;
   max-width: 400px;
   margin: 0 auto;
+  margin-bottom: 2rem;
 }
 
 .grid {
