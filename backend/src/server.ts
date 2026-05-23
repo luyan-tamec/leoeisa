@@ -49,7 +49,16 @@ app.use(
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: (origin, callback) => {
+      const allowed = (process.env.FRONTEND_URL || "http://localhost:3000")
+        .split(",")
+        .map(o => o.trim());
+      if (!origin || allowed.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
@@ -182,6 +191,7 @@ app.use("/auth", authRouter);
 app.use("/api/movies", moviesRouter);
 app.use("/api/admin", adminRouter);
 app.use("/", pagesRouter);
+app.use("/filmes", pagesRouter);
 
 // ── 404 ──
 app.use((_req, res) => {
