@@ -26,6 +26,7 @@ router.get("/", async (req: Request, res: Response) => {
     userVotedIds = new Set(votes.map((v) => v.movieId));
   }
 
+  const reactionsSetting = await prisma.setting.findUnique({ where: { key: "reactions_enabled" } });
   const total = movies.reduce((s, m) => s + m.voteCount, 0);
   const max = movies.length ? Math.max(...movies.map((m) => m.voteCount)) : 0;
 
@@ -40,8 +41,11 @@ router.get("/", async (req: Request, res: Response) => {
 
   const categories = ["todos", "acao", "comedia", "terror", "drama", "ficcao", "animacao"];
 
+  const reactionsEnabled = reactionsSetting?.value === "true";
+
   res.render("index", {
     movies: enriched,
+    reactionsEnabled,
     total,
     activeCategory: category,
     categories,
@@ -57,14 +61,6 @@ router.get("/", async (req: Request, res: Response) => {
     error: error || null,
     twitchClientId: process.env.TWITCH_CLIENT_ID,
   });
-});
-
-router.get("/filmes", async (_req: Request, res: Response) => {
-  const movies = await prisma.movie.findMany({
-    orderBy: [{ active: "desc" }, { voteCount: "desc" }],
-  });
-
-  res.json(movies);
 });
 
 // ── Admin pages ──

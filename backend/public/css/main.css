@@ -135,60 +135,65 @@ header {
   margin-bottom: 2rem;
 }
 
-/* ── View toggle ── */
-.view-toggle {
-  display: flex; align-items: center; justify-content: flex-end;
-  padding: 0 clamp(1rem,5vw,3rem) .8rem; gap: .35rem; position: relative; z-index: 1;
+/* ── Reactions ── */
+.reactions-wrap {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: .35rem; padding: .5rem .1rem 0; position: relative;
 }
-.view-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px; border-radius: 8px;
+.reactions-display {
+  display: flex; flex-wrap: wrap; gap: .3rem;
+}
+.reaction-btn {
+  display: inline-flex; align-items: center; gap: .28rem;
+  padding: .28rem .6rem; border-radius: 20px;
   border: 1px solid var(--border); background: var(--surface2);
-  color: var(--muted); cursor: pointer; transition: all .18s;
+  color: var(--muted); font-size: .78rem; font-weight: 600;
+  cursor: pointer; transition: all .18s; font-family: inherit;
+  line-height: 1;
 }
-.view-btn:hover { border-color: var(--border2); color: var(--text); }
-.view-btn.active { background: rgba(145,71,255,.15); border-color: rgba(145,71,255,.4); color: var(--twitch); }
+.reaction-btn:hover { border-color: var(--border2); background: var(--surface3); color: var(--text); }
+.reaction-btn.reacted {
+  background: rgba(145,71,255,.12);
+  border-color: rgba(145,71,255,.4);
+  color: var(--twitch);
+}
+.reaction-emoji { font-size: .9rem; line-height: 1; }
+.reaction-count { font-size: .72rem; min-width: .6rem; }
 
-/* ── Grid mode (default) ── */
+/* Botão Reagir */
+.btn-react {
+  display: inline-flex; align-items: center; gap: .3rem;
+  padding: .28rem .65rem; border-radius: 20px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--muted); font-size: .75rem; font-weight: 600;
+  cursor: pointer; transition: all .18s; font-family: inherit;
+  line-height: 1;
+}
+.btn-react:hover { border-color: var(--border2); color: var(--text); background: var(--surface2); }
+
+/* Picker de emojis */
+.reaction-picker {
+  position: absolute; bottom: calc(100% + 6px); left: 0;
+  display: flex; gap: .25rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: .4rem .5rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  z-index: 50;
+}
+.reaction-pick-btn {
+  font-size: 1.3rem; background: none; border: none;
+  cursor: pointer; padding: .2rem .15rem; border-radius: 6px;
+  transition: transform .12s, background .12s; line-height: 1;
+}
+.reaction-pick-btn:hover { transform: scale(1.3); background: var(--surface2); }
+
+/* Lista mode */
+.grid.list-view .reactions-wrap { padding-top: .4rem; flex-basis: 100%; }
+
+/* ── View toggle ── */
 .grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
   gap: 1.4rem; padding: 0 clamp(1rem,5vw,3rem) 4rem; position: relative; z-index: 1;
-}
-
-/* ── List mode ── */
-.grid.list-view {
-  grid-template-columns: 1fr;
-  gap: .75rem;
-}
-.grid.list-view .card {
-  display: flex; flex-direction: row; border-radius: 12px; overflow: visible;
-}
-.grid.list-view .card-poster {
-  width: 130px; min-width: 130px; aspect-ratio: unset;
-  border-radius: 12px 0 0 12px; overflow: hidden; flex-shrink: 0; align-self: stretch;
-}
-.grid.list-view .card-poster img { width: 100%; height: 100%; object-fit: cover; min-height: 100px; }
-.grid.list-view .card-rank { font-size: 1.1rem; top: 50%; left: 8px; color: rgba(255,255,255,.75); }
-.grid.list-view .card-badge { top: 6px; right: 6px; font-size: .65rem; }
-.grid.list-view .card-body {
-  display: flex; flex-direction: row; align-items: center;
-  gap: 1rem; padding: .75rem 1rem; flex: 1; flex-wrap: wrap;
-  overflow: visible; position: relative; z-index: 1;
-}
-.grid.list-view .card-title { font-size: .92rem; margin-bottom: 0; flex: 1 1 120px; }
-.grid.list-view .card-description { display: none; }
-.grid.list-view .card-meta { margin-bottom: 0; white-space: nowrap; flex-shrink: 0; }
-.grid.list-view .progress-wrap { flex: 1 1 140px; margin-bottom: 0; }
-.grid.list-view .btn-vote {
-  width: auto; padding: .5rem 1.1rem; white-space: nowrap;
-  flex-shrink: 0; position: relative; z-index: 5;
-}
-
-@media (max-width: 600px) {
-  .grid.list-view .card-poster { width: 100px; min-width: 100px; }
-  .grid.list-view .card-body { gap: .5rem; padding: .6rem .75rem; }
-  .grid.list-view .progress-wrap { flex-basis: 100%; }
-  .grid.list-view .btn-vote { flex-basis: 100%; justify-content: center; }
 }
 .empty { grid-column: 1/-1; text-align: center; padding: 4rem 1rem; color: var(--muted); }
 .empty svg { width: 52px; height: 52px; margin-bottom: 1rem; opacity: .25; display: block; margin-inline: auto; }
@@ -214,7 +219,7 @@ header {
 .card-rank {
   position: absolute; top: 8px; left: 10px;
   font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem;
-  color: rgba(255,255,255,.75); line-height: 1;
+  color: rgba(255,255,255,.15); line-height: 1;
 }
 .card-body { padding: 1rem 1.1rem 1.2rem; }
 .card-title { font-size: 1rem; font-weight: 600; line-height: 1.2; margin-bottom: .2rem; }
@@ -353,4 +358,3 @@ header {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
-; }
