@@ -270,15 +270,17 @@ Fica terminantemente proibida a indicação de:
 
   function loadReactions() {
     if (!reactionsEnabled) return;
-    document.querySelectorAll('.reactions-wrap[data-movie-id]').forEach(function(wrap) {
-      var movieId = wrap.getAttribute('data-movie-id');
-      fetch('/api/reactions/' + movieId)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (!data.enabled) return;
-          renderDisplay(wrap, data.counts, data.userReactions);
+    fetch('/api/reactions')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.enabled) return;
+        document.querySelectorAll('.reactions-wrap[data-movie-id]').forEach(function(wrap) {
+          var movieId = wrap.getAttribute('data-movie-id');
+          var counts  = data.counts[movieId] || {};
+          var mine    = data.userReactions[movieId] || [];
+          renderDisplay(wrap, counts, mine);
         });
-    });
+      });
   }
 
   // Fechar pickers abertos ao clicar fora
