@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 
 export type LogAction =
@@ -28,7 +29,7 @@ export async function writeLog(params: LogParams): Promise<void> {
         action:  params.action,
         userId:  params.userId  ?? null,
         movieId: params.movieId ?? null,
-        meta:    params.meta    ?? undefined,
+        meta:    params.meta != null ? params.meta as Prisma.InputJsonValue : undefined,
       },
     });
   } catch (err) {
