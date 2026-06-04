@@ -139,7 +139,6 @@ header {
 .reactions-wrap {
   display: flex; flex-wrap: wrap; align-items: center;
   gap: .35rem; padding: .5rem .1rem 0; position: relative;
-  overflow:auto;
 }
 .reactions-display {
   display: flex; flex-wrap: wrap; gap: .3rem; overflow:auto;
@@ -412,3 +411,4 @@ header {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+radius: 999px; }
