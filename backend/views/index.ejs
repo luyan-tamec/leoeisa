@@ -126,7 +126,7 @@
             Reagir
           </button>
           <!-- Picker (oculto por padrão) -->
-          <div class="reaction-picker" style="display:none;">
+          <div class="reaction-picker" style="display:none; overflow: auto;">
             <% ["🔥", "❤️", "😂", "😮", "👏", "💀","💕","🙏","👀","🤓","😠","💩","🥱","💯","👌","👍"].forEach(function(emoji) { %>
               <button class="reaction-pick-btn" data-emoji="<%= emoji %>" data-movie-id="<%= movie.id %>"><%= emoji %></button>
             <% }); %>
