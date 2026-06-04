@@ -139,6 +139,7 @@ header {
 .reactions-wrap {
   display: flex; flex-wrap: wrap; align-items: center;
   gap: .35rem; padding: .5rem .1rem 0; position: relative;
+  overflow-x:auto;
 }
 .reactions-display {
   display: flex; flex-wrap: wrap; gap: .3rem; overflow:auto;
@@ -241,7 +242,7 @@ header {
 .grid.list-view .card-description { flex-basis: 100%; font-size: .70rem; margin-bottom: 0; }
 .grid.list-view .progress-wrap { flex-basis: 90%; margin-bottom: .5rem; }
 .grid.list-view .btn-vote { width: auto; padding: .4rem 1.0rem; flex-shrink: 0; }
-.grid.list-view .reactions-wrap { padding-top: 0; flex-basis: 100%; overflow:auto; }
+.grid.list-view .reactions-wrap { padding-top: 0; flex-basis: 100%; overflow-x:auto; }
 
 @media (max-width: 520px) {
   .grid.list-view .card-poster { width: 100px; min-width: 90px; }
@@ -411,4 +412,3 @@ header {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
-radius: 999px; }
