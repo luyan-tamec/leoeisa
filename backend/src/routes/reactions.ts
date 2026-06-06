@@ -5,7 +5,17 @@ import { writeLog } from "../lib/logger";
 
 const router = Router();
 
-const ALLOWED_EMOJIS = ["🔥", "❤️", "😂", "😮", "👏", "💀","💕","🙏","👀","🤓","😠","💩","🥱","💯","👌","👍"];
+const ALLOWED_EMOJIS = ["🔥", "❤️", "😂", "😮", "👏", "💀"];
+
+// GET /api/reactions/emotes — lista emotes customizados ativos
+router.get("/emotes", async (_req: Request, res: Response) => {
+  const emotes = await prisma.customEmote.findMany({
+    where:   { active: true },
+    orderBy: { createdAt: "asc" },
+    select:  { id: true, name: true, imageUrl: true },
+  });
+  res.json(emotes);
+});
 
 // GET /api/reactions — busca contagens de TODOS os filmes de uma vez
 router.get("/", async (req: Request, res: Response) => {

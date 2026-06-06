@@ -79,6 +79,28 @@
       </button>
     </div>
 
+    <!-- Toggle bot Twitch -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem;margin-bottom:.8rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;">
+        <div>
+          <div style="font-weight:600;font-size:.88rem;">Bot do Twitch — !ranking</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:.15rem;">Responde o ranking atual no chat quando um mod digita !ranking</div>
+        </div>
+        <button id="botToggle" style="position:relative;width:44px;height:24px;border-radius:999px;border:none;cursor:pointer;transition:background .2s;background:var(--surface3);">
+          <span style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;display:block;" id="botThumb"></span>
+        </button>
+      </div>
+      <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+        <span style="font-size:.78rem;color:var(--muted);">Mostrar top</span>
+        <div style="display:flex;gap:.3rem;">
+          <button class="top-btn" data-value="3">3</button>
+          <button class="top-btn" data-value="5">5</button>
+          <button class="top-btn" data-value="10">10</button>
+        </div>
+        <span id="botStatus" style="font-size:.72rem;margin-left:.3rem;"></span>
+      </div>
+    </div>
+
     <div class="action-row">
       <button class="btn-danger" data-action="reset-all">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -245,6 +267,32 @@
       </div>
     </div>
 
+    <div class="section-title">Emotes Customizados</div>
+    <div style="max-width:600px;margin-bottom:2rem;">
+
+      <!-- Formulário adicionar emote -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;">
+        <div style="font-size:.83rem;font-weight:600;margin-bottom:.8rem;">Adicionar emote</div>
+        <div style="display:flex;flex-direction:column;gap:.6rem;">
+          <input id="emoteName" placeholder="Nome do emote (ex: pog, hype)" style="padding:.42rem .8rem;border-radius:8px;border:1px solid var(--border);background:var(--surface3);color:var(--text);font-size:.83rem;outline:none;font-family:inherit;">
+          <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+            <label style="font-size:.78rem;color:var(--muted);white-space:nowrap;">Upload:</label>
+            <input type="file" id="emoteFile" accept="image/*" style="font-size:.75rem;color:var(--muted);flex:1;">
+          </div>
+          <div style="display:flex;gap:.5rem;align-items:center;">
+            <label style="font-size:.78rem;color:var(--muted);white-space:nowrap;">ou URL:</label>
+            <input id="emoteUrl" placeholder="https://..." style="flex:1;padding:.42rem .8rem;border-radius:8px;border:1px solid var(--border);background:var(--surface3);color:var(--text);font-size:.83rem;outline:none;font-family:inherit;">
+          </div>
+          <button id="btnAddEmote" class="btn-primary btn-sm" style="align-self:flex-start;">
+            + Adicionar emote
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista de emotes -->
+      <div id="emoteList" style="display:flex;flex-direction:column;gap:.5rem;"></div>
+    </div>
+
     <div class="section-title">Banco de Dados</div>
     <div class="action-row" style="margin-bottom:2rem;">
       <button class="btn-ghost" onclick="exportJson()">
@@ -294,6 +342,75 @@
 
 <script src="/js/admin.js"></script>
 <script>
+// ── Emotes customizados ──
+async function loadEmotes() {
+  const list = document.getElementById('emoteList');
+  if (!list) return;
+  const res    = await fetch('/api/admin/emotes');
+  const emotes = await res.json();
+
+  if (emotes.length === 0) {
+    list.innerHTML = '<p style="font-size:.8rem;color:var(--muted);">Nenhum emote cadastrado.</p>';
+    return;
+  }
+
+  list.innerHTML = emotes.map(e => `
+    <div style="display:flex;align-items:center;gap:.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.6rem .9rem;" id="emote-${e.id}">
+      <img src="${e.imageUrl}" style="width:28px;height:28px;object-fit:contain;border-radius:4px;" alt="${e.name}">
+      <span style="flex:1;font-size:.83rem;font-weight:600;">${e.name}</span>
+      <span style="font-size:.72rem;color:${e.active ? '#4ade80' : 'var(--muted)'};">${e.active ? 'Ativo' : 'Inativo'}</span>
+      <button onclick="toggleEmote('${e.id}')" style="padding:.28rem .6rem;border-radius:6px;border:1px solid var(--border);background:var(--surface3);color:var(--muted);font-size:.72rem;cursor:pointer;font-family:inherit;">
+        ${e.active ? 'Desativar' : 'Ativar'}
+      </button>
+      <button onclick="deleteEmote('${e.id}', '${e.name}')" style="padding:.28rem .6rem;border-radius:6px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.08);color:#f87171;font-size:.72rem;cursor:pointer;font-family:inherit;">
+        Remover
+      </button>
+    </div>
+  `).join('');
+}
+
+async function toggleEmote(id) {
+  await fetch(`/api/admin/emotes/${id}/toggle`, { method: 'PATCH' });
+  loadEmotes();
+}
+
+async function deleteEmote(id, name) {
+  if (!confirm(`Remover emote "${name}"?`)) return;
+  await fetch(`/api/admin/emotes/${id}`, { method: 'DELETE' });
+  loadEmotes();
+  showToast(`Emote "${name}" removido.`, 'warn');
+}
+
+const btnAddEmote = document.getElementById('btnAddEmote');
+if (btnAddEmote) {
+  btnAddEmote.addEventListener('click', async function() {
+    const name = document.getElementById('emoteName').value.trim();
+    const file = document.getElementById('emoteFile').files[0];
+    const url  = document.getElementById('emoteUrl').value.trim();
+
+    if (!name) { showToast('Informe o nome do emote.', 'err'); return; }
+    if (!file && !url) { showToast('Envie uma imagem ou informe uma URL.', 'err'); return; }
+
+    const fd = new FormData();
+    fd.append('name', name);
+    if (file) fd.append('image', file);
+    else fd.append('imageUrl', url);
+
+    const res = await fetch('/api/admin/emotes', { method: 'POST', body: fd });
+    const data = await res.json();
+
+    if (!res.ok) { showToast(data.error || 'Erro ao adicionar emote.', 'err'); return; }
+
+    document.getElementById('emoteName').value = '';
+    document.getElementById('emoteFile').value = '';
+    document.getElementById('emoteUrl').value  = '';
+    showToast(`Emote "${name}" adicionado!`);
+    loadEmotes();
+  });
+
+  loadEmotes();
+}
+
 // ── Busca de filmes ──
 const movieSearch = document.getElementById("movieSearch");
 if (movieSearch) {
@@ -306,6 +423,94 @@ if (movieSearch) {
   });
 }
   // ── Reactions toggle ──
+  // ── Bot styles (inline pois são poucos) ──
+  document.head.insertAdjacentHTML('beforeend', `<style>
+    .top-btn {
+      padding:.28rem .7rem;border-radius:8px;border:1px solid var(--border);
+      background:var(--surface3);color:var(--muted);font-size:.78rem;font-weight:600;
+      cursor:pointer;font-family:inherit;transition:all .18s;
+    }
+    .top-btn.active { background:rgba(145,71,255,.15);border-color:rgba(145,71,255,.4);color:var(--twitch); }
+  </style>`);
+
+  // ── Bot toggle ──
+  var currentTopCount = 3;
+
+  function setBotToggleUI(enabled) {
+    var btn   = document.getElementById('botToggle');
+    var thumb = document.getElementById('botThumb');
+    if (!btn || !thumb) return;
+    btn.style.background  = enabled ? '#9147ff' : 'var(--surface3)';
+    thumb.style.transform = enabled ? 'translateX(20px)' : 'translateX(0)';
+    btn.dataset.enabled   = enabled ? 'true' : 'false';
+  }
+
+  function setTopBtn(val) {
+    currentTopCount = val;
+    document.querySelectorAll('.top-btn').forEach(function(b) {
+      b.classList.toggle('active', parseInt(b.getAttribute('data-value')) === val);
+    });
+  }
+
+  async function initBotToggle() {
+    try {
+      var res  = await fetch('/api/admin/settings/bot');
+      var data = await res.json();
+      setBotToggleUI(data.enabled);
+      setTopBtn(data.topCount || 3);
+      var status = document.getElementById('botStatus');
+      if (status) {
+        status.textContent   = data.connected ? '🟢 Conectado' : '⚫ Desconectado';
+        status.style.color   = data.connected ? '#4ade80' : 'var(--muted)';
+      }
+    } catch(e) { console.error('initBotToggle:', e); }
+  }
+
+  document.getElementById('botToggle').addEventListener('click', async function() {
+    var btn     = document.getElementById('botToggle');
+    var current = btn.dataset.enabled === 'true';
+    var next    = !current;
+    setBotToggleUI(next);
+    try {
+      var res  = await fetch('/api/admin/settings/bot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: next, topCount: currentTopCount })
+      });
+      var data = await res.json();
+      setBotToggleUI(data.enabled);
+      var status = document.getElementById('botStatus');
+      if (status) {
+        setTimeout(async function() {
+          var r2 = await fetch('/api/admin/settings/bot');
+          var d2 = await r2.json();
+          status.textContent = d2.connected ? '🟢 Conectado' : '⚫ Desconectado';
+          status.style.color = d2.connected ? '#4ade80' : 'var(--muted)';
+        }, 2000);
+      }
+    } catch(e) {
+      console.error('botToggle:', e);
+      setBotToggleUI(current);
+    }
+  });
+
+  document.querySelectorAll('.top-btn').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var val     = parseInt(btn.getAttribute('data-value'));
+      var enabled = document.getElementById('botToggle').dataset.enabled === 'true';
+      setTopBtn(val);
+      try {
+        await fetch('/api/admin/settings/bot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled, topCount: val })
+        });
+      } catch(e) { console.error('setTop:', e); }
+    });
+  });
+
+  initBotToggle();
+
   function setToggleUI(enabled) {
     var btn   = document.getElementById('reactionsToggle');
     var thumb = document.getElementById('reactionsThumb');

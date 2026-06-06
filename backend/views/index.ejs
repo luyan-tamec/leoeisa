@@ -50,17 +50,11 @@
 <p id="noResults" style="display:none;text-align:center;color:var(--muted);padding:2rem 0;font-size:.9rem;">Nenhum filme encontrado.</p>
 
 <div class="view-toggle">
-  <button class="view-toggle-btn active" id="btnGridView" title="Grade" aria-label="Grade">
+  <button class="view-toggle-btn active" id="btnGridView" title="Visualização em grade" aria-label="Grade">
     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
   </button>
-  <button class="view-toggle-btn" id="btnListView" title="Lista" aria-label="Lista">
+  <button class="view-toggle-btn" id="btnListView" title="Visualização em lista" aria-label="Lista">
     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-  </button>
-  <button class="view-toggle-btn" id="btnCompactView" title="Compacto" aria-label="Compacto">
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg>
-  </button>
-  <button class="view-toggle-btn" id="btnRankingView" title="Ranking" aria-label="Ranking">
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
   </button>
 </div>
 
@@ -132,8 +126,8 @@
             Reagir
           </button>
           <!-- Picker (oculto por padrão) -->
-          <div class="reaction-picker" style="display:none; overflow: auto;">
-            <% ["🔥", "❤️", "😂", "😮", "👏", "💀","💕","🙏","👀","🤓","😠","💩","🥱","💯","👌","👍"].forEach(function(emoji) { %>
+          <div class="reaction-picker" style="display:none;">
+            <% ['🔥','❤️','😂','😮','👏','💀'].forEach(function(emoji) { %>
               <button class="reaction-pick-btn" data-emoji="<%= emoji %>" data-movie-id="<%= movie.id %>"><%= emoji %></button>
             <% }); %>
           </div>
@@ -266,19 +260,58 @@ Fica terminantemente proibida a indicação de:
   // ── Reactions ──
   var reactionsEnabled = <%= reactionsEnabled %>;
 
-  var EMOJIS = ["🔥", "❤️", "😂", "😮", "👏", "💀","💕","🙏","👀","🤓","😠","💩","🥱","💯","👌","👍"];
+  var EMOJIS        = ['🔥','❤️','😂','😮','👏','💀'];
+  var customEmotes  = []; // { id, name, imageUrl }
+
+  // Carrega emotes customizados e adiciona no picker
+  async function loadCustomEmotes() {
+    if (!reactionsEnabled) return;
+    try {
+      var res  = await fetch('/api/reactions/emotes');
+      customEmotes = await res.json();
+      // Atualiza todos os pickers com os emotes customizados
+      document.querySelectorAll('.reaction-picker').forEach(function(picker) {
+        // Remove emotes customizados antigos
+        picker.querySelectorAll('.reaction-pick-btn[data-custom]').forEach(function(b) { b.remove(); });
+        // Adiciona os novos
+        customEmotes.forEach(function(e) {
+          var btn = document.createElement('button');
+          btn.className = 'reaction-pick-btn';
+          btn.setAttribute('data-emoji', e.name);
+          btn.setAttribute('data-movie-id', picker.closest('.reactions-wrap').getAttribute('data-movie-id'));
+          btn.setAttribute('data-custom', '1');
+          btn.innerHTML = '<img src="' + e.imageUrl + '" style="width:20px;height:20px;object-fit:contain;" alt="' + e.name + '">';
+          picker.appendChild(btn);
+        });
+      });
+    } catch(e) { console.error('loadCustomEmotes:', e); }
+  }
 
   function renderDisplay(wrap, counts, userReactions) {
     var display = wrap.querySelector('.reactions-display');
     display.innerHTML = '';
+
+    // Emojis padrão
     EMOJIS.forEach(function(emoji) {
       var count = counts[emoji] || 0;
-      if (count === 0) return; // só mostra se tiver reação
+      if (count === 0) return;
       var btn = document.createElement('button');
       btn.className = 'reaction-btn' + (userReactions.includes(emoji) ? ' reacted' : '');
       btn.setAttribute('data-emoji', emoji);
       btn.setAttribute('data-movie-id', wrap.getAttribute('data-movie-id'));
       btn.innerHTML = '<span class="reaction-emoji">' + emoji + '</span><span class="reaction-count">' + count + '</span>';
+      display.appendChild(btn);
+    });
+
+    // Emotes customizados
+    customEmotes.forEach(function(e) {
+      var count = counts[e.name] || 0;
+      if (count === 0) return;
+      var btn = document.createElement('button');
+      btn.className = 'reaction-btn' + (userReactions.includes(e.name) ? ' reacted' : '');
+      btn.setAttribute('data-emoji', e.name);
+      btn.setAttribute('data-movie-id', wrap.getAttribute('data-movie-id'));
+      btn.innerHTML = '<img src="' + e.imageUrl + '" style="width:18px;height:18px;object-fit:contain;" alt="' + e.name + '"><span class="reaction-count">' + count + '</span>';
       display.appendChild(btn);
     });
   }
@@ -365,39 +398,34 @@ Fica terminantemente proibida a indicação de:
   });
 
   loadReactions();
+  loadCustomEmotes();
 
   // ── View toggle ──
-  const movieGrid    = document.getElementById('movieGrid');
-  const btnGrid      = document.getElementById('btnGridView');
-  const btnList      = document.getElementById('btnListView');
-  const btnCompact   = document.getElementById('btnCompactView');
-  const btnRanking   = document.getElementById('btnRankingView');
-
-  const VIEW_CLASSES = ['list-view', 'compact-view', 'ranking-view'];
-  const VIEW_BTNS    = { grid: btnGrid, list: btnList, compact: btnCompact, ranking: btnRanking };
+  const movieGrid   = document.getElementById('movieGrid');
+  const btnGrid     = document.getElementById('btnGridView');
+  const btnList     = document.getElementById('btnListView');
 
   function setView(mode) {
-    VIEW_CLASSES.forEach(c => movieGrid.classList.remove(c));
-    Object.values(VIEW_BTNS).forEach(b => b && b.classList.remove('active'));
-
-    if (mode === 'list')    movieGrid.classList.add('list-view');
-    if (mode === 'compact') movieGrid.classList.add('compact-view');
-    if (mode === 'ranking') movieGrid.classList.add('ranking-view');
-
-    if (VIEW_BTNS[mode]) VIEW_BTNS[mode].classList.add('active');
+    if (mode === 'list') {
+      movieGrid.classList.add('list-view');
+      btnList.classList.add('active');
+      btnGrid.classList.remove('active');
+    } else {
+      movieGrid.classList.remove('list-view');
+      btnGrid.classList.add('active');
+      btnList.classList.remove('active');
+    }
     try { localStorage.setItem('cv_view', mode); } catch(e) {}
   }
 
   // Restaurar preferência salva
   try {
     const saved = localStorage.getItem('cv_view');
-    if (['list','compact','ranking'].includes(saved)) setView(saved);
+    if (saved === 'list') setView('list');
   } catch(e) {}
 
-  if (btnGrid)    btnGrid.addEventListener('click',    () => setView('grid'));
-  if (btnList)    btnList.addEventListener('click',    () => setView('list'));
-  if (btnCompact) btnCompact.addEventListener('click', () => setView('compact'));
-  if (btnRanking) btnRanking.addEventListener('click', () => setView('ranking'));
+  if (btnGrid) btnGrid.addEventListener('click', () => setView('grid'));
+  if (btnList) btnList.addEventListener('click', () => setView('list'));
 
   // ── Search ──
   const movieSearch = document.getElementById('movieSearch');
