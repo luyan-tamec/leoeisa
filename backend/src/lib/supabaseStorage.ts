@@ -25,10 +25,10 @@ export function getSupabaseClient() {
 }
 
 export async function uploadEmote(
-  fileBuffer: Buffer,
   fileName: string,
+  fileBuffer: Buffer,
   mimeType: string
-) {
+): Promise<string> {
   const supabase = getSupabaseClient();
 
   const path = `emotes/${Date.now()}-${fileName}`;
@@ -48,10 +48,7 @@ export async function uploadEmote(
     .from(BUCKET)
     .getPublicUrl(path);
 
-  return {
-    path,
-    url: data.publicUrl,
-  };
+  return data.publicUrl;
 }
 
 export async function deleteEmote(path: string) {
