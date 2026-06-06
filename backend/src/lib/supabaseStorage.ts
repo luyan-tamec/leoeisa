@@ -8,7 +8,9 @@ export function getSupabaseClient() {
   if (!SUPABASE_URL || !SUPABASE_SERVICE) {
     throw new Error("Supabase não configurado — defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY");
   }
-  return createClient(SUPABASE_URL, SUPABASE_SERVICE);
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE, {
+    realtime: { log_level: "info" } as any,
+  });
 }
 
 /**
