@@ -5,7 +5,7 @@ import { writeLog } from "../lib/logger";
 
 const router = Router();
 
-const ALLOWED_EMOJIS = ["🔥", "❤️", "😂", "😮", "👏", "💀"];
+const ALLOWED_EMOJIS = [ "🔥", "❤️", "😂", "😮", "👏", "💀","💕","🙏","👀","🤓","😠","💩","🥱","💯","👌","👍"];
 
 // GET /api/reactions/emotes — lista emotes customizados ativos
 router.get("/emotes", async (_req: Request, res: Response) => {

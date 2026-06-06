@@ -127,7 +127,7 @@
           </button>
           <!-- Picker (oculto por padrão) -->
           <div class="reaction-picker" style="display:none;">
-            <% ['🔥','❤️','😂','😮','👏','💀'].forEach(function(emoji) { %>
+            <% ["🔥", "❤️", "😂", "😮", "👏", "💀","💕","🙏","👀","🤓","😠","💩","🥱","💯","👌","👍"].forEach(function(emoji) { %>
               <button class="reaction-pick-btn" data-emoji="<%= emoji %>" data-movie-id="<%= movie.id %>"><%= emoji %></button>
             <% }); %>
           </div>
@@ -260,7 +260,7 @@ Fica terminantemente proibida a indicação de:
   // ── Reactions ──
   var reactionsEnabled = <%= reactionsEnabled %>;
 
-  var EMOJIS        = ['🔥','❤️','😂','😮','👏','💀'];
+  var EMOJIS        = ["🔥", "❤️", "😂", "😮", "👏", "💀","💕","🙏","👀","🤓","😠","💩","🥱","💯","👌","👍"];
   var customEmotes  = []; // { id, name, imageUrl }
 
   // Carrega emotes customizados e adiciona no picker
