@@ -24,7 +24,7 @@ export function getSupabaseClient() {
   });
 }
 
-export async function uploadEmoteToSupabase(
+export async function uploadEmote(
   fileBuffer: Buffer,
   fileName: string,
   mimeType: string
@@ -48,5 +48,24 @@ export async function uploadEmoteToSupabase(
     .from(BUCKET)
     .getPublicUrl(path);
 
-  return data.publicUrl;
+  return {
+    path,
+    url: data.publicUrl,
+  };
+}
+
+export async function deleteEmote(path: string) {
+  const supabase = getSupabaseClient();
+
+  const cleanPath = path.replace(/^emotes\//, "");
+
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .remove([cleanPath]);
+
+  if (error) {
+    throw error;
+  }
+
+  return true;
 }
