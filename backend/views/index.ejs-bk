@@ -133,7 +133,7 @@
           </button>
           <!-- Picker (oculto por padrão) -->
           <div class="reaction-picker" style="display:none;">
-            <% ["🔥", "❤️", "😂", "😮", "👏", "💀","💕","🙏","👀","🤓","😠","💩","🥱","💯","👌","👍"].forEach(function(emoji) { %>
+            <% [ "🔥", "❤️", "😂", "😮", "👏", "💀","💕","🙏","👀","🤓","😠","💩","🥱","💯","👌","👍"].forEach(function(emoji) { %>
               <button class="reaction-pick-btn" data-emoji="<%= emoji %>" data-movie-id="<%= movie.id %>"><%= emoji %></button>
             <% }); %>
           </div>
@@ -266,7 +266,7 @@ Fica terminantemente proibida a indicação de:
   // ── Reactions ──
   var reactionsEnabled = <%= reactionsEnabled %>;
 
-  var EMOJIS        = ["🔥", "❤️", "😂", "😮", "👏", "💀","💕","🙏","👀","🤓","😠","💩","🥱","💯","👌","👍"];
+  var EMOJIS        = [ "🔥", "❤️", "😂", "😮", "👏", "💀","💕","🙏","👀","🤓","😠","💩","🥱","💯","👌","👍"];
   var customEmotes  = []; // { id, name, imageUrl }
 
   // Carrega emotes customizados e adiciona no picker
@@ -274,8 +274,7 @@ Fica terminantemente proibida a indicação de:
     if (!reactionsEnabled) return;
     try {
       var res  = await fetch('/api/reactions/emotes');
-      var fetched = await res.json();
-      if (Array.isArray(fetched)) customEmotes = fetched;
+      customEmotes = await res.json();
       // Atualiza todos os pickers com os emotes customizados
       document.querySelectorAll('.reaction-picker').forEach(function(picker) {
         picker.querySelectorAll('.reaction-pick-btn[data-custom]').forEach(function(b) { b.remove(); });
@@ -377,9 +376,7 @@ Fica terminantemente proibida a indicação de:
         body: JSON.stringify({ emoji: emoji })
       })
       .then(function(r) { return r.json(); })
-      .then(function(data) {
-        renderDisplay(wrap, data.counts || {}, Array.isArray(data.userReactions) ? data.userReactions : []);
-      });
+      .then(function(data) { renderDisplay(wrap, data.counts, data.userReactions); });
       return;
     }
 
@@ -400,9 +397,7 @@ Fica terminantemente proibida a indicação de:
         body: JSON.stringify({ emoji: emoji })
       })
       .then(function(r) { return r.json(); })
-      .then(function(data) {
-        renderDisplay(wrap, data.counts || {}, Array.isArray(data.userReactions) ? data.userReactions : []);
-      });
+      .then(function(data) { renderDisplay(wrap, data.counts, data.userReactions); });
     }
   });
 
