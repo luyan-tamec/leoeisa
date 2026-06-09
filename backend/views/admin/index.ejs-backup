@@ -79,6 +79,7 @@
       </button>
     </div>
 
+
     <div class="action-row">
       <button class="btn-danger" data-action="reset-all">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -245,7 +246,7 @@
       </div>
     </div>
 
-    <div class="section-title">Emotes Customizados</div>
+    <div class="section-title">Emotes Customizados (EM BREVE ,NAO FUNCIONAL)</div>
     <div style="max-width:600px;margin-bottom:2rem;">
 
       <!-- Formulário adicionar emote -->
@@ -337,10 +338,10 @@ async function loadEmotes() {
       <img src="${e.imageUrl}" style="width:28px;height:28px;object-fit:contain;border-radius:4px;" alt="${e.name}">
       <span style="flex:1;font-size:.83rem;font-weight:600;">${e.name}</span>
       <span style="font-size:.72rem;color:${e.active ? '#4ade80' : 'var(--muted)'};">${e.active ? 'Ativo' : 'Inativo'}</span>
-      <button class="emote-toggle-btn" data-id="${e.id}" style="padding:.28rem .6rem;border-radius:6px;border:1px solid var(--border);background:var(--surface3);color:var(--muted);font-size:.72rem;cursor:pointer;font-family:inherit;">
+      <button onclick="toggleEmote('${e.id}')" style="padding:.28rem .6rem;border-radius:6px;border:1px solid var(--border);background:var(--surface3);color:var(--muted);font-size:.72rem;cursor:pointer;font-family:inherit;">
         ${e.active ? 'Desativar' : 'Ativar'}
       </button>
-      <button class="emote-delete-btn" data-id="${e.id}" data-name="${e.name}" style="padding:.28rem .6rem;border-radius:6px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.08);color:#f87171;font-size:.72rem;cursor:pointer;font-family:inherit;">
+      <button onclick="deleteEmote('${e.id}', '${e.name}')" style="padding:.28rem .6rem;border-radius:6px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.08);color:#f87171;font-size:.72rem;cursor:pointer;font-family:inherit;">
         Remover
       </button>
     </div>
@@ -353,30 +354,11 @@ async function toggleEmote(id) {
 }
 
 async function deleteEmote(id, name) {
+  if (!confirm(`Remover emote "${name}"?`)) return;
   await fetch(`/api/admin/emotes/${id}`, { method: 'DELETE' });
   loadEmotes();
-  showToast(`Emote "${name}" removido.`);
+  showToast(`Emote "${name}" removido.`, 'warn');
 }
-
-// Delegação de eventos pros botões de emote
-document.addEventListener('click', function(e) {
-  var toggleBtn = e.target.closest('.emote-toggle-btn');
-  if (toggleBtn) {
-    toggleEmote(toggleBtn.getAttribute('data-id'));
-    return;
-  }
-
-  var deleteBtn = e.target.closest('.emote-delete-btn');
-  if (deleteBtn) {
-    var id   = deleteBtn.getAttribute('data-id');
-    var name = deleteBtn.getAttribute('data-name');
-    showConfirm(
-      'Remover emote',
-      `Remover o emote "${name}"? Esta ação não pode ser desfeita.`,
-      function() { deleteEmote(id, name); }
-    );
-  }
-});
 
 const btnAddEmote = document.getElementById('btnAddEmote');
 if (btnAddEmote) {
@@ -420,10 +402,6 @@ if (movieSearch) {
   });
 }
   // ── Reactions toggle ──
-
-
-  initBotToggle();
-
   function setToggleUI(enabled) {
     var btn   = document.getElementById('reactionsToggle');
     var thumb = document.getElementById('reactionsThumb');
