@@ -6,6 +6,7 @@ import { prisma } from "../lib/prisma";
 import { requireAdmin } from "../middleware/auth";
 import { writeLog } from "../lib/logger";
 import { uploadEmote, deleteEmote } from "../lib/supabaseStorage";
+import { notifyMovieAdded, startBot, stopBot, getBotStatus, restartBot } from "../lib/twitchBot";
 
 const router = Router();
 
@@ -92,6 +93,10 @@ router.post("/movies", upload.single("poster"), async (req: Request, res: Respon
     movieId: movie.id,
     meta:    { title: movie.title, year: movie.year, category: movie.category },
   });
+
+  // ── Notifica bot ──
+  notifyMovieAdded({ title: movie.title, year: movie.year, category: movie.category })
+    .catch(() => {});
 
   res.status(201).json(movie);
 });
@@ -257,6 +262,71 @@ router.patch("/emotes/:id/toggle", async (req: Request, res: Response) => {
     data:  { active: !emote.active },
   });
   res.json(updated);
+});
+
+// GET /api/admin/settings/bot
+router.get("/settings/bot", async (_req: Request, res: Response) => {
+  const [enabledS, templateS, spawnS, intervalS] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: "bot_enabled" } }),
+    prisma.setting.findUnique({ where: { key: "bot_message_template" } }),
+    prisma.setting.findUnique({ where: { key: "bot_spawn_count" } }),
+    prisma.setting.findUnique({ where: { key: "bot_spawn_interval" } }),
+  ]);
+  res.json({
+    enabled:   enabledS?.value === "true",
+    template:  templateS?.value || "🎬 Novo filme adicionado: {titulo} ({ano}) - {categoria}",
+    spawnCount: parseInt(spawnS?.value || "1"),
+    spawnInterval: parseInt(intervalS?.value || "1"),
+    connected: getBotStatus(),
+  });
+});
+
+// POST /api/admin/settings/bot
+router.post("/settings/bot", async (req: Request, res: Response) => {
+  const { enabled, template, spawnCount, spawnInterval } = req.body as {
+    enabled?: boolean;
+    template?: string;
+    spawnCount?: number;
+    spawnInterval?: number;
+  };
+
+  const ops: Promise<any>[] = [];
+
+  if (enabled !== undefined) {
+    ops.push(prisma.setting.upsert({
+      where:  { key: "bot_enabled" },
+      update: { value: enabled ? "true" : "false" },
+      create: { key: "bot_enabled", value: enabled ? "true" : "false" },
+    }));
+  }
+  if (template !== undefined) {
+    ops.push(prisma.setting.upsert({
+      where:  { key: "bot_message_template" },
+      update: { value: template },
+      create: { key: "bot_message_template", value: template },
+    }));
+  }
+  if (spawnCount !== undefined) {
+    ops.push(prisma.setting.upsert({
+      where:  { key: "bot_spawn_count" },
+      update: { value: String(Math.min(10, Math.max(1, spawnCount))) },
+      create: { key: "bot_spawn_count", value: String(Math.min(10, Math.max(1, spawnCount))) },
+    }));
+  }
+  if (spawnInterval !== undefined) {
+    ops.push(prisma.setting.upsert({
+      where:  { key: "bot_spawn_interval" },
+      update: { value: String(Math.max(1, spawnInterval)) },
+      create: { key: "bot_spawn_interval", value: String(Math.max(1, spawnInterval)) },
+    }));
+  }
+
+  await Promise.all(ops);
+
+  if (enabled === true)  await startBot();
+  if (enabled === false) await stopBot();
+
+  res.json({ success: true, connected: getBotStatus() });
 });
 
 // GET /api/admin/settings/reactions — status atual
